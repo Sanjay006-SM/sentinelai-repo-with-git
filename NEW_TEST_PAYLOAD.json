@@ -1,0 +1,65 @@
+{
+  "Records": [
+    {
+      "eventVersion": "1.08",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAJ45Q7YFFAEXAMPLE1",
+        "arn": "arn:aws:iam::123456789012:user/new-user-1",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2026-06-25T10:00:00Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "DeleteBucket",
+      "sourceIPAddress": "192.168.1.10",
+      "userAgent": "aws-cli/2.0.0"
+    },
+    {
+      "eventVersion": "1.08",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAJ45Q7YFFAEXAMPLE2:session1",
+        "arn": "arn:aws:sts::123456789012:assumed-role/new-admin-role/session1",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2026-06-25T10:05:00Z",
+      "eventSource": "kms.amazonaws.com",
+      "eventName": "DisableKey",
+      "sourceIPAddress": "192.168.1.11",
+      "userAgent": "aws-cli/2.0.0"
+    },
+    {
+      "eventVersion": "1.08",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAJ45Q7YFFAEXAMPLE3",
+        "arn": "arn:aws:iam::123456789012:user/new-user-2",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2026-06-25T10:10:00Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "CreateUser",
+      "sourceIPAddress": "192.168.1.12",
+      "userAgent": "aws-cli/2.0.0",
+      "errorCode": "AccessDenied",
+      "errorMessage": "User is not authorized to perform: iam:CreateUser"
+    },
+    {
+      "eventVersion": "1.08",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAJ45Q7YFFAEXAMPLE4",
+        "arn": "arn:aws:iam::123456789012:user/new-user-3",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2026-06-25T10:15:00Z",
+      "eventSource": "sts.amazonaws.com",
+      "eventName": "AssumeRole",
+      "sourceIPAddress": "192.168.1.13",
+      "userAgent": "aws-cli/2.0.0",
+      "requestParameters": {
+        "roleArn": "arn:aws:iam::123456789012:role/TargetRoleForEscalation"
+      }
+    }
+  ]
+}

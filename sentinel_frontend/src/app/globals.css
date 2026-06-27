@@ -1,0 +1,301 @@
+@import "tailwindcss";
+
+@theme {
+  /* -------------------------------------------------------------------------- */
+  /* Liquid Glass Design System                                                 */
+  /* -------------------------------------------------------------------------- */
+  
+  /* Primary Accent - Neon Lime from Reference */
+  --color-primary: #D3F531;
+  --color-primary-hover: #bde026;
+  
+  /* Text */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  
+  /* Severities */
+  --color-critical: #ef4444;
+  --color-high: #f97316;
+  --color-medium: #eab308;
+  --color-low: #22c55e;
+  
+  /* Legacy Mappings */
+  --color-success: #D3F531; /* Map success to the neon brand color */
+  --color-warning: #f97316;
+  --color-danger: #ef4444;
+  --color-purple: #8B5CF6;
+  --color-cyan: #06b6d4;
+}
+
+@layer base {
+  body {
+    background-color: #0f1115;
+    background-image: url('https://images.unsplash.com/photo-1618220179428-22790b46a0eb?q=80&w=2574&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Add an overlay to the body to darken the image slightly */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: -1;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+}
+
+@layer components {
+  /* -------------------------------------------------------------------------- */
+  /* Liquid Glass Panels (Replacing Light Mode Cards)                           */
+  /* -------------------------------------------------------------------------- */
+  .card, .glass-panel, .lg-surface {
+    position: relative;
+    background: rgba(20, 22, 26, 0.45);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.1),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.4),
+      0 8px 32px rgba(0, 0, 0, 0.4);
+    padding: 1.5rem;
+    transition: transform 250ms ease, box-shadow 250ms ease;
+    overflow: hidden;
+  }
+  
+  .card:hover, .lg-surface:hover {
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.15),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.4),
+      0 12px 48px rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
+  }
+  
+  .card::before, .lg-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .card > *, .lg-surface > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* Semantic Glass Background Utilities                                        */
+  /* -------------------------------------------------------------------------- */
+  .bg-glass-subtle {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .bg-glass-active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .border-glass-subtle {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  .border-glass-active {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* Button Styles                                                              */
+  /* -------------------------------------------------------------------------- */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200 ease-in-out focus-visible:outline-none disabled:opacity-50 disabled:pointer-events-none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  .btn-sm { @apply h-8 px-3 text-xs; }
+  .btn-md { @apply h-10 px-4 py-2 text-sm; }
+  .btn-lg { @apply h-12 px-8 text-base; }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: #000000;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 0 15px rgba(211, 245, 49, 0.3);
+  }
+  .btn-primary:hover {
+    background: var(--color-primary-hover);
+    box-shadow: 0 0 25px rgba(211, 245, 49, 0.5);
+    transform: scale(1.02);
+  }
+  
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  
+  .btn-danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+  .btn-danger:hover {
+    background: rgba(239, 68, 68, 0.3);
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* Input Styles                                                               */
+  /* -------------------------------------------------------------------------- */
+  .input-field, .lg-input {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #ffffff;
+    padding: 0.5rem 1rem;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 200ms ease;
+    @apply flex h-10 w-full text-sm placeholder:text-gray-500;
+  }
+  .input-field:focus, .lg-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(211, 245, 49, 0.2);
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* Badge Styles                                                               */
+  /* -------------------------------------------------------------------------- */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase transition-colors;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  
+  .badge-primary {
+    background: rgba(211, 245, 49, 0.15);
+    color: var(--color-primary);
+    border: 1px solid rgba(211, 245, 49, 0.3);
+  }
+  .badge-success {
+    background: rgba(211, 245, 49, 0.15);
+    color: var(--color-primary);
+    border: 1px solid rgba(211, 245, 49, 0.3);
+  }
+  .badge-warning {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+  }
+  .badge-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+}
+
+@layer base {
+  /* -------------------------------------------------------------------------- */
+  /* Light Theme Overrides                                                      */
+  /* -------------------------------------------------------------------------- */
+  html.light-theme body {
+    background-color: #f8fafc;
+    background-image: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2070&auto=format&fit=crop');
+    color: #0f172a;
+  }
+  
+  html.light-theme body::before {
+    background: rgba(255, 255, 255, 0.5); /* lighter overlay */
+  }
+
+  html.light-theme {
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #334155;
+    --color-text-muted: #475569;
+    --color-border: rgba(0, 0, 0, 0.1);
+    --color-border-subtle: rgba(0, 0, 0, 0.05);
+  }
+
+  html.light-theme .card,
+  html.light-theme .glass-panel,
+  html.light-theme .lg-surface {
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 
+      0 8px 32px rgba(15, 23, 42, 0.08), 
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+
+  html.light-theme .card:hover,
+  html.light-theme .lg-surface:hover {
+    box-shadow: 
+      0 12px 48px rgba(15, 23, 42, 0.12), 
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+
+  html.light-theme .input-field,
+  html.light-theme .lg-input {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    color: #0f172a;
+    box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.05);
+  }
+
+  html.light-theme .btn-secondary {
+    background: rgba(15, 23, 42, 0.05);
+    color: #0f172a;
+    border: 1px solid rgba(15, 23, 42, 0.15);
+  }
+
+  html.light-theme .btn-secondary:hover {
+    background: rgba(15, 23, 42, 0.1);
+    border-color: rgba(15, 23, 42, 0.25);
+  }
+
+  /* Light Theme Semantic Glass Overrides */
+  html.light-theme .bg-glass-subtle {
+    background: rgba(0, 0, 0, 0.03);
+  }
+  html.light-theme .bg-glass-active {
+    background: rgba(0, 0, 0, 0.06);
+  }
+  html.light-theme .border-glass-subtle {
+    border-color: rgba(0, 0, 0, 0.08);
+  }
+  html.light-theme .border-glass-active {
+    border-color: rgba(0, 0, 0, 0.15);
+  }
+}
