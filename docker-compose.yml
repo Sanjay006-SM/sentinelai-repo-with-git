@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: sentinel_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sanjay
+      POSTGRES_DB: sentinel
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5.12.0
+    container_name: sentinel_neo4j
+    environment:
+      NEO4J_AUTH: neo4j/12Asdf*#_
+    ports:
+      - "7474:7474" # HTTP interface
+      - "7687:7687" # Bolt protocol
+    volumes:
+      - neo4j_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  neo4j_data:
