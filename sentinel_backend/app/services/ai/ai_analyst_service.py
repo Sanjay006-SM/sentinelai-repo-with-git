@@ -30,7 +30,7 @@ class AIAnalystService:
     def _call_gemini_api(self, prompt: str) -> str:
         # Note: the new SDK config format
         response = self.client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-3.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -40,9 +40,9 @@ class AIAnalystService:
 
     def call_llm(self, prompt: str) -> Dict[str, Any]:
         """
-        Calls Gemini 2.5 Flash with retry and timeout constraints, returning the parsed JSON.
+        Calls Gemini 3.5 Flash with retry and timeout constraints, returning the parsed JSON.
         """
-        logger.info("Calling Gemini 2.5 Flash for identity investigation...")
+        logger.info("Calling Gemini 3.5 Flash for identity investigation...")
         raw_response = ""
         try:
             raw_response = self._call_gemini_api(prompt)
