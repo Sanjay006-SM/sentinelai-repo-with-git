@@ -6,6 +6,9 @@ from app.core.config import settings
 from app.api.v1.api import api_router
 from app.graph.session import neo4j_manager
 
+# Initialize Enterprise Projections
+from app.projections.audit_projector import audit_projector
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup

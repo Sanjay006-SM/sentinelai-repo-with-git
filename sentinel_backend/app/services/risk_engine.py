@@ -5,7 +5,12 @@ import logging
 from app.models.machine_identity import MachineIdentity
 from app.models.risk_score import RiskScore
 from app.models.risk_finding import RiskFinding
+from app.models.tenant import Workspace
 from app.services.risk_factor_calculator import RiskFactorCalculator
+
+from app.core.events.bus import event_bus
+from app.core.events.contracts import RiskEvent
+from app.core.events.event_types import ActorClassification, EventCategory, EventSeverity, EventStatus, ResourceClassification
 
 logger = logging.getLogger(__name__)
 
@@ -90,10 +95,29 @@ class RiskEngine:
         )
         self.db.add(risk_record)
         
-        # Update denormalized cache on Identity
         identity.risk_score = total_score
         
         self.db.flush()
+        
+        # Publish Risk Event
+        workspace = self.db.query(Workspace).filter(Workspace.id == identity.workspace_id).first()
+        org_id = str(workspace.organization_id) if workspace else "SYSTEM"
+        
+        event_bus.publish(RiskEvent(
+            workspace_id=str(identity.workspace_id),
+            organization_id=org_id,
+            actor="RiskEngine",
+            actor_type=ActorClassification.INTERNAL_ENGINE,
+            module="RiskEngine",
+            action="RISK_CALCULATED",
+            category=EventCategory.RISK,
+            severity=EventSeverity.CRITICAL if severity == "Critical" else EventSeverity.INFO,
+            status=EventStatus.SUCCESS,
+            resource_type=ResourceClassification.IDENTITY,
+            resource_id=identity.arn,
+            metadata={"score": total_score, "severity": severity, "findings_count": len(all_reasons)}
+        ))
+        
         return risk_record
 
     def evaluate_all(self):

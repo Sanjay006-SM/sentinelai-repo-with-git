@@ -8,6 +8,10 @@ from app.core.security import hash_password, verify_password, create_access_toke
 from app.models.tenant import Organization, User, Workspace
 from app.schemas.auth import UserRegister, UserLogin, Token, AuthMeResponse
 
+from app.core.events.bus import event_bus
+from app.core.events.contracts import AuditEvent
+from app.core.events.event_types import ActorClassification, EventCategory, EventSeverity, EventStatus, ResourceClassification
+
 router = APIRouter()
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
@@ -84,6 +88,22 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(
         subject=str(user.id), secret_key=settings.SECRET_KEY, expires_delta=access_token_expires
     )
+    
+    workspace = db.query(Workspace).filter(Workspace.organization_id == user.organization_id).first()
+    if workspace:
+        event_bus.publish(AuditEvent(
+            workspace_id=str(workspace.id),
+            organization_id=str(user.organization_id),
+            actor=user.email,
+            actor_type=ActorClassification.HUMAN_USER,
+            module="Authentication",
+            action="LOGIN_SUCCESS",
+            category=EventCategory.AUTHENTICATION,
+            severity=EventSeverity.INFO,
+            status=EventStatus.SUCCESS,
+            resource_type=ResourceClassification.SYSTEM
+        ))
+        
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=AuthMeResponse)
