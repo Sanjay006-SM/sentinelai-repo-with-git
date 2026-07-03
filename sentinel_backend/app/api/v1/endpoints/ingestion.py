@@ -32,9 +32,16 @@ def process_file_background(file_content: bytes, job_id: str, filename: str = No
     
     try:
         # Load raw JSON
+        if not file_content:
+            raise ValueError("Uploaded file is empty.")
         try:
-            json_data = json.loads(file_content)
-        except json.JSONDecodeError:
+            # Decode using utf-8-sig to automatically strip BOM if present
+            decoded_content = file_content.decode('utf-8-sig')
+            json_data = json.loads(decoded_content)
+        except json.JSONDecodeError as e:
+            # Print the first 100 characters for debugging if it's malformed
+            preview = file_content[:100]
+            print(f"JSONDecodeError: {str(e)}. Content preview: {preview}")
             raise ValueError("Malformed JSON upload file.")
 
         # Normalization Info Logging
@@ -187,6 +194,8 @@ async def upload_cloudtrail_logs(
         
     try:
         content = await file.read()
+        print(f"DEBUG: file read length: {len(content)}")
+        print(f"DEBUG: file content preview: {content[:100]}")
         # Create Ingestion Job record
         job = IngestionJob(
             workspace_id=workspace.id,

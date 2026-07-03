@@ -150,6 +150,13 @@ export const useReports = (skip: number = 0, limit: number = 100) => {
     queryKey: ['reports', skip, limit],
     queryFn: async (): Promise<{data: any[]}> => {
       return await api.get(`/reports?skip=${skip}&limit=${limit}`);
+    },
+    refetchInterval: (query) => {
+      // Poll every 3 seconds if any report is in a non-terminal state
+      const data = query.state.data as {data: any[]} | undefined;
+      const activeStates = ['QUEUED', 'GENERATING', 'VALIDATING', 'RENDERING', 'UPLOADING', 'RETRYING'];
+      const isGenerating = data?.data?.some(r => activeStates.includes(r.status));
+      return isGenerating ? 3000 : false;
     }
   });
 };

@@ -64,3 +64,49 @@ class AIAnalystService:
             logger.error(f"Error in AIAnalystService: {e}", exc_info=True)
             raise ValueError(f"AI Analysis Failed: {str(e)}")
 
+    def generate_executive_report_summary(self, metrics: Dict[str, Any]) -> str:
+        """
+        Generates an executive summary strictly based on the provided metrics.
+        Includes a validation constraint against hallucinations.
+        """
+        logger.info(json.dumps({
+            "stage": "AI_SUMMARY_GENERATION",
+            "status": "STARTED"
+        }))
+        prompt = f"""
+        You are a Principal Cloud Security Architect. Generate a concise, professional executive summary 
+        for an enterprise security report based strictly on the following metrics.
+        
+        CRITICAL CONSTRAINT: DO NOT hallucinate any numbers, identities, or risks. 
+        Only use the data provided below. If data is zero or missing, state that clearly.
+        
+        Metrics:
+        {json.dumps(metrics, indent=2)}
+        
+        Return ONLY the raw text summary paragraphs. No markdown formatting, no titles.
+        """
+        
+        try:
+            # We don't want JSON here, just plain text
+            response = self.client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
+            summary = response.text.strip()
+            # Simple validation: ensure it's not empty
+            if not summary:
+                raise ValueError("AI returned empty summary")
+            
+            logger.info(json.dumps({
+                "stage": "AI_SUMMARY_GENERATION",
+                "status": "SUCCESS"
+            }))
+            return summary
+        except Exception as e:
+            logger.error(json.dumps({
+                "stage": "AI_SUMMARY_GENERATION",
+                "status": "FAILED",
+                "error": str(e)
+            }))
+            return "AI Summary unavailable."
+
