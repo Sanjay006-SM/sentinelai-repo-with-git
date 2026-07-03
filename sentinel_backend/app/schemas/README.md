@@ -1,26 +1,38 @@
-# Stage 2: Enterprise Data Normalization Engine
+# SentinelAI Data Normalization Engine
 
-This directory contains the Enterprise Data Normalization Engine, fulfilling **Stage 2** of the SentinelAI intelligence pipeline.
+## Overview
 
-## 1. Problem Solved
-Raw telemetry formats (such as AWS CloudTrail JSONs) originate from multiple enterprise security platforms and contain vendor-specific schemas, naming conventions, timestamps, and identifiers. Before analytics can be performed, this data must be cast into a strict, validated schema. 
+The Enterprise Data Normalization Engine serves as the foundational data validation and transformation layer of the SentinelAI intelligence pipeline. It ensures that all downstream analytical components operate on a consistent, standardized representation of enterprise security information.
 
-The Normalization Engine eliminates these differences by transforming vendor-specific data structures into SentinelAI's **Canonical Enterprise Data Model**. This ensures that all downstream components operate on a consistent and standardized representation of enterprise security information, while preventing malformed logs from polluting the database.
+## Responsibilities
 
-## 2. Architecture
-The normalization engine relies heavily on Python's **Pydantic** library for strict type enforcement and data validation.
-- `CloudTrailEvent`: Standardizes a flat structure for required fields (`eventTime`, `eventName`, `sourceIPAddress`) while accommodating flexible JSON payloads via `Dict[str, Any]` for `requestParameters` and `responseElements`.
-- `UserIdentity`: Extracts and normalizes the complex IAM actor structure into simple identifiable strings (`arn`, `type`, `accountId`).
+* **Data Transformation:** Converts disparate, vendor-specific telemetry formats into a strict canonical enterprise data model.
+* **Validation:** Enforces strict type checking and structural validation to prevent malformed logs from polluting the database or crashing downstream logic.
+* **Enrichment:** Extracts and normalizes complex actor structures into simple, identifiable strings.
 
-## 3. Execution Pipeline (Parse → Normalize → Enrich → Standardize)
-**Pipeline Step 1:** Receive raw JSON output from the Enterprise Data Ingestion Engine (Stage 1).
-**Pipeline Step 2:** Parse directly into the `CloudTrailLogFile` schema.
-**Pipeline Step 3:** Pydantic automatically validates and normalizes types (e.g., parsing ISO8601 strings into proper `datetime` objects), enriching and standardizing the data into canonical entities.
-**Pipeline Step 4:** Any invalid logs raise `ValidationError` and are excluded, protecting data integrity. The canonical entities are then forwarded to the Enterprise Knowledge Graph Builder (Stage 3).
+## Architecture
 
-## 4. Major Features
-- **Strict Typing**: Enforces the presence of fields critical to security analytics (like `eventID` and `userIdentity`).
-- **Flexible Payload Handling**: Non-standard fields (like dynamic request parameters) are safely preserved as un-indexed JSON structures.
+Raw telemetry formats—such as AWS CloudTrail JSON logs—originate from multiple security platforms and contain varying schemas, naming conventions, and identifiers. The Normalization Engine eliminates these discrepancies utilizing robust data validation libraries to enforce strict type checking and canonical formatting.
 
-## 5. Security & Governance
-By strictly typing outputs, the Normalization Engine inherently mitigates injection-style attacks or unhandled null-reference exceptions in downstream processing logic (e.g. Neo4j Cypher construction).
+## Workflow
+
+### Data Flow
+
+1. **Ingestion:** Raw JSON payloads are received from the upstream ingestion handlers.
+2. **Parsing:** The payloads are parsed directly into the standardized log file schema.
+3. **Normalization & Enrichment:** Types are automatically validated and normalized (e.g., casting ISO8601 strings into native datetime objects). The data is enriched and standardized into canonical enterprise entities.
+4. **Validation Enforcement:** Any invalid logs that fail structural requirements raise validation errors and are safely excluded, preserving data integrity. Validated entities are forwarded to the Enterprise Knowledge Graph Builder.
+
+## Features
+
+* **Strict Type Enforcement:** Guarantees the presence of fields critical to security analytics, such as event identifiers and user identities.
+* **Flexible Payload Handling:** Safely preserves non-standard or highly dynamic fields (like request parameters) as un-indexed JSON structures without breaking the strict schema.
+
+## Internal Components
+
+* `CloudTrailEvent`: Standardizes a flat structure for required fields while accommodating flexible JSON payloads for variable elements.
+* `UserIdentity`: Extracts and normalizes complex IAM actor structures into canonical identifiers.
+
+## Security Considerations
+
+By strictly typing all outputs and sanitizing inputs, the Normalization Engine inherently mitigates injection-style attacks and prevents unhandled null-reference exceptions in downstream processing logic, such as Neo4j Cypher query construction.

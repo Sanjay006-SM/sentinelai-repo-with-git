@@ -1,25 +1,39 @@
-# Stage 7: API Gateway
+# SentinelAI API Gateway
 
-This directory contains the core routing and integration layer for the backend, fulfilling **Stage 7** of the SentinelAI intelligence pipeline.
+## Overview
 
-## 1. Problem Solved
-Complex security intelligence requires a robust, scalable, and clearly segmented API for front-end consumption. The API Gateway organizes various analytical services (Risk Engine, AI Analyst, Graph Traversal) into unified, secure, and authenticated REST endpoints, acting as the secure bridge between the AI logic engines and the Dashboards.
+The API Gateway provides the core routing and integration layer for the SentinelAI backend. It organizes various analytical services—such as the Risk Engine, AI Analyst, and Graph Traversal components—into unified, secure, and authenticated REST endpoints, acting as the secure bridge between the backend intelligence engines and the frontend Dashboards.
 
-## 2. Architecture
-The architecture is built on the high-performance **FastAPI** framework.
-- `api.py`: The master API router that aggregates individual domain routers.
-- `endpoints/`: A segmented collection of route controllers (e.g., `ai.py`, `dashboard.py`, `identities.py`).
+## Responsibilities
 
-## 3. Execution Pipeline (Authenticate → Route → Secure Response)
-**Pipeline Step 1 (Authenticate):** Client initiates an HTTP request. Authentication middlewares ensure all routes strictly validate identity permissions.
-**Pipeline Step 2 (Route):** Request reaches `api.py`, which routes traffic to the designated namespace (e.g., `/api/v1/ai`). The domain-specific endpoint validates the request structure using Pydantic dependencies.
-**Pipeline Step 3 (Secure Response):** The endpoint queries the necessary backend service (Neo4j, Postgres, or Explainability Engine) and securely returns the serialized response.
+* **Traffic Routing:** Directs incoming HTTP requests to the appropriate domain-specific controllers.
+* **Authentication & Authorization:** Validates identity permissions and secures all protected endpoints.
+* **Service Integration:** Passes active, dependency-injected sessions to underlying backend services.
 
-## 4. Major Features
-- **Modular Namespace Routing**: Distinct prefixes (`/auth`, `/analytics`, `/ai`, `/ingestion`) keep the API surface highly organized.
-- **Dependency Injected Sessions**: Passes active database connections safely through the FastAPI dependency system to the underlying intelligence engines.
-- **Automated Documentation**: Leverages FastAPI to automatically generate enterprise-standard OpenAPI (Swagger) specifications.
+## Architecture
 
-## 5. Security & Governance
-- Authentication middlewares ensure all routes strictly validate identity permissions.
-- Centralized error handling prevents stack traces or sensitive architecture details from leaking in HTTP responses.
+The architecture is built on the high-performance FastAPI framework, utilizing a modular namespace structure. This segmentation ensures the API surface remains highly organized, scalable, and easy to maintain as new intelligence capabilities are introduced.
+
+## Workflow
+
+### Request Flow
+
+1. **Authentication:** The client initiates an HTTP request. Authentication middlewares intercept the request to ensure strict validation of identity permissions.
+2. **Routing & Validation:** The request reaches the master API router and is directed to the designated namespace. The domain-specific endpoint validates the request structure and payload using declarative schema dependencies.
+3. **Execution & Response:** The endpoint queries the necessary backend service (e.g., Neo4j, PostgreSQL, or the Explainability Engine) and securely returns a serialized response to the client.
+
+## Features
+
+* **Modular Namespace Routing:** Distinct prefixes separate concerns across the API surface (e.g., authentication, analytics, artificial intelligence, ingestion).
+* **Dependency Injected Sessions:** Database connections and context are safely passed through the dependency injection system directly to the intelligence engines.
+* **Automated Documentation:** Enterprise-standard OpenAPI specifications are generated automatically.
+
+## Internal Components
+
+* `api.py`: The master routing application that aggregates individual domain controllers.
+* `endpoints/`: A segmented collection of route controllers housing the specific endpoint logic.
+
+## Security Considerations
+
+* **Middleware Enforcement:** Authentication is handled at the middleware layer, guaranteeing that unauthenticated requests cannot reach underlying intelligence engines.
+* **Error Sanitization:** Centralized error handling prevents stack traces, internal database schemas, or sensitive architecture details from leaking in HTTP responses.
