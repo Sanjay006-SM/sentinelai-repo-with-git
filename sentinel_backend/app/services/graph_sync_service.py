@@ -2,8 +2,14 @@ from sqlalchemy.orm import Session as DBSession
 from neo4j import Session as GraphSession
 from app.models.machine_identity import MachineIdentity
 from app.models.access_log import AccessLog
+from app.models.tenant import Workspace
 from app.graph.graph_builder import GraphBuilder
 import logging
+
+from app.core.events.bus import event_bus
+from app.core.events.contracts import GraphEvent
+from app.core.events.event_types import ActorClassification, EventCategory, EventSeverity, EventStatus, ResourceClassification
+
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +90,23 @@ class GraphSyncService:
         nodes_created = len(unique_arns) + len(unique_ips) + len(unique_resources)
 
         logger.info(f"Neo4j sync complete. Nodes affected: {nodes_created}, Relationships affected: {relationships_created}")
+        
+        workspace = self.db.query(Workspace).filter(Workspace.id == workspace_id).first()
+        org_id = str(workspace.organization_id) if workspace else "SYSTEM"
+        
+        event_bus.publish(GraphEvent(
+            workspace_id=workspace_id,
+            organization_id=org_id,
+            actor="GraphSyncEngine",
+            actor_type=ActorClassification.INTERNAL_ENGINE,
+            module="GraphSync",
+            action="GRAPH_BUILD_COMPLETED",
+            category=EventCategory.GRAPH,
+            severity=EventSeverity.INFO,
+            status=EventStatus.SUCCESS,
+            resource_type=ResourceClassification.SYSTEM,
+            metadata={"nodes_created": nodes_created, "relationships_created": relationships_created}
+        ))
         
         return {
             "nodes_created": nodes_created,

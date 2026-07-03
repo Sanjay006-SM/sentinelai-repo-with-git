@@ -70,7 +70,7 @@ class IngestionService:
                 
                 # Determine if identity already exists before discovery to track created/updated stats
                 from app.models.machine_identity import MachineIdentity
-                existing_identity = self.db.query(MachineIdentity).filter(MachineIdentity.arn == arn).first()
+                existing_identity = self.db.query(MachineIdentity).filter(MachineIdentity.arn == arn, MachineIdentity.workspace_id == workspace_id).first()
                 
                 identity = self.discovery_engine.discover_identity(
                     arn=arn,

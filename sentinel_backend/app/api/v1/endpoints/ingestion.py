@@ -11,6 +11,10 @@ from app.models.ingestion_job import IngestionJob
 from app.models.tenant import User, Workspace
 from app.services.ingestion import IngestionService
 
+from app.core.events.bus import event_bus
+from app.core.events.contracts import AuditEvent
+from app.core.events.event_types import ActorClassification, EventCategory, EventSeverity, EventStatus, ResourceClassification
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -209,6 +213,20 @@ async def upload_cloudtrail_logs(
         # Process the file synchronously for real-time UI updates and gather stats
         stats = process_file_background(content, str(job.job_id), file.filename, str(workspace.id))
         
+        event_bus.publish(AuditEvent(
+            workspace_id=str(workspace.id),
+            organization_id=str(workspace.organization_id),
+            actor="SYSTEM",
+            actor_type=ActorClassification.INTERNAL_ENGINE,
+            module="Ingestion",
+            action="UPLOAD_COMPLETED",
+            category=EventCategory.INGESTION,
+            severity=EventSeverity.INFO,
+            status=EventStatus.SUCCESS,
+            resource_type=ResourceClassification.SYSTEM,
+            metadata={"filename": file.filename, "stats": stats}
+        ))
+        
         return {
             "message": "File uploaded and processed successfully.",
             "job_id": str(job.job_id),
@@ -227,4 +245,17 @@ async def upload_cloudtrail_logs(
     except HTTPException as he:
         raise he
     except Exception as e:
+        event_bus.publish(AuditEvent(
+            workspace_id=str(workspace.id),
+            organization_id=str(workspace.organization_id),
+            actor="SYSTEM",
+            actor_type=ActorClassification.INTERNAL_ENGINE,
+            module="Ingestion",
+            action="UPLOAD_FAILED",
+            category=EventCategory.INGESTION,
+            severity=EventSeverity.HIGH,
+            status=EventStatus.FAILED,
+            resource_type=ResourceClassification.SYSTEM,
+            metadata={"filename": file.filename, "error": str(e)}
+        ))
         raise HTTPException(status_code=500, detail=str(e))
