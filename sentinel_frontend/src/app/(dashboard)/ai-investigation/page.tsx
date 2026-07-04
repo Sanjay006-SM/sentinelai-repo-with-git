@@ -39,20 +39,21 @@ export default function AIInvestigationPage() {
       // Construct detailed AI response from backend Gemini results
       const aiResponseText = `
 ### Executive Summary
-${report.executive_summary}
+${report.executive_summary || ""}
 
 ### Risk Assessment
-${report.risk_assessment}
+${report.risk_assessment || ""}
 
 ### Attack Path Analysis
-${report.attack_path_analysis}
+${report.attack_path_analysis || ""}
 
 ### Findings
-${report.findings.map((f: string) => `• ${f}`).join("\n")}
+${(report.findings || []).map((f: string) => `• ${f}`).join("\n")}
 
 ### Recommendations
-${report.recommendations.map((r: string) => `• ${r}`).join("\n")}
+${(report.recommendations || []).map((r: string) => `• ${r}`).join("\n")}
       `.trim();
+
 
       setDynamicMessages(prev => [...prev, { role: 'ai', content: aiResponseText }]);
     } catch (err: any) {

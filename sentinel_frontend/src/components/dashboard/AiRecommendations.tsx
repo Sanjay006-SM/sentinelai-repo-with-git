@@ -79,14 +79,15 @@ export default function AiRecommendations() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="grid grid-cols-1 lg:grid-cols-3 gap-6"
           >
-            {report.recommendations.slice(0, 3).map((rec, idx) => (
+            {(report.recommendations || []).slice(0, 3).map((rec, idx) => (
               <div key={idx} className={`bg-transparent border border-glass-subtle border-l-4 rounded-xl flex flex-col p-5 shadow-lg relative overflow-hidden group hover:border-glass-active transition-colors ${
                 idx === 0 ? "border-l-[#ef4444]" : "border-l-[#f97316]"
               }`}>
                 <div className="flex flex-col gap-1 mb-3">
                   <h4 className="font-bold text-text-primary leading-snug">{rec.split('.')[0] || "Remediation Action"}</h4>
-                  <span className="font-mono text-[#06b6d4] text-xs truncate" title={report.identity_id}>{report.identity_id.split('/').pop() || report.identity_id}</span>
+                  <span className="font-mono text-[#06b6d4] text-xs truncate" title={report.identity_id || ""}>{(report.identity_id || "").split('/').pop() || report.identity_id || ""}</span>
                 </div>
+
                 <p className="text-sm text-text-muted mb-4 line-clamp-3">
                   {rec}
                 </p>

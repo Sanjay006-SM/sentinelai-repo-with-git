@@ -9,12 +9,16 @@ export interface AIInvestigationRequest {
 }
 
 export interface AIInvestigationResponse {
-  investigation_id: string;
-  identity_id: string;
-  executive_summary: string;
-  risk_assessment: string;
-  attack_path_analysis: string;
-  findings: string[];
-  recommendations: string[];
-  analyzed_at: string;
+  success?: boolean;
+  code?: string;
+  message?: string;
+  investigation_id?: string;
+  identity_id?: string;
+  executive_summary?: string;
+  risk_assessment?: string;
+  attack_path_analysis?: string;
+  findings?: string[];
+  recommendations?: string[];
+  analyzed_at?: string;
 }
+

@@ -3,6 +3,7 @@ export interface DashboardSummary {
   critical_risk_count: number;
   attack_path_count: number;
   total_findings_count: number;
+  cloud_accounts_count?: number;
 }
 
 export interface RiskFinding {
