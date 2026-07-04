@@ -9,3 +9,7 @@ pydantic-settings
 python-dotenv
 google-generativeai
 tenacity
+PyJWT
+bcrypt
+cryptography
+boto3
