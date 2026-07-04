@@ -129,3 +129,7 @@ venv.bak/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Custom local ignores
+antigravity-awesome-skills-main/
+.agents/
