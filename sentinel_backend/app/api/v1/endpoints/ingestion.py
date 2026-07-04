@@ -11,6 +11,10 @@ from app.models.ingestion_job import IngestionJob
 from app.models.tenant import User, Workspace
 from app.services.ingestion import IngestionService
 
+from app.core.events.bus import event_bus
+from app.core.events.contracts import AuditEvent
+from app.core.events.event_types import ActorClassification, EventCategory, EventSeverity, EventStatus, ResourceClassification
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -32,9 +36,16 @@ def process_file_background(file_content: bytes, job_id: str, filename: str = No
     
     try:
         # Load raw JSON
+        if not file_content:
+            raise ValueError("Uploaded file is empty.")
         try:
-            json_data = json.loads(file_content)
-        except json.JSONDecodeError:
+            # Decode using utf-8-sig to automatically strip BOM if present
+            decoded_content = file_content.decode('utf-8-sig')
+            json_data = json.loads(decoded_content)
+        except json.JSONDecodeError as e:
+            # Print the first 100 characters for debugging if it's malformed
+            preview = file_content[:100]
+            print(f"JSONDecodeError: {str(e)}. Content preview: {preview}")
             raise ValueError("Malformed JSON upload file.")
 
         # Normalization Info Logging
@@ -187,6 +198,8 @@ async def upload_cloudtrail_logs(
         
     try:
         content = await file.read()
+        print(f"DEBUG: file read length: {len(content)}")
+        print(f"DEBUG: file content preview: {content[:100]}")
         # Create Ingestion Job record
         job = IngestionJob(
             workspace_id=workspace.id,
@@ -199,6 +212,20 @@ async def upload_cloudtrail_logs(
         
         # Process the file synchronously for real-time UI updates and gather stats
         stats = process_file_background(content, str(job.job_id), file.filename, str(workspace.id))
+        
+        event_bus.publish(AuditEvent(
+            workspace_id=str(workspace.id),
+            organization_id=str(workspace.organization_id),
+            actor="SYSTEM",
+            actor_type=ActorClassification.INTERNAL_ENGINE,
+            module="Ingestion",
+            action="UPLOAD_COMPLETED",
+            category=EventCategory.INGESTION,
+            severity=EventSeverity.INFO,
+            status=EventStatus.SUCCESS,
+            resource_type=ResourceClassification.SYSTEM,
+            metadata={"filename": file.filename, "stats": stats}
+        ))
         
         return {
             "message": "File uploaded and processed successfully.",
@@ -218,4 +245,17 @@ async def upload_cloudtrail_logs(
     except HTTPException as he:
         raise he
     except Exception as e:
+        event_bus.publish(AuditEvent(
+            workspace_id=str(workspace.id),
+            organization_id=str(workspace.organization_id),
+            actor="SYSTEM",
+            actor_type=ActorClassification.INTERNAL_ENGINE,
+            module="Ingestion",
+            action="UPLOAD_FAILED",
+            category=EventCategory.INGESTION,
+            severity=EventSeverity.HIGH,
+            status=EventStatus.FAILED,
+            resource_type=ResourceClassification.SYSTEM,
+            metadata={"filename": file.filename, "error": str(e)}
+        ))
         raise HTTPException(status_code=500, detail=str(e))

@@ -20,10 +20,10 @@ export default async function CanvasPage(
 
       <div className="flex-1 flex gap-4 h-full overflow-hidden">
         {/* Left Pane: Graph (70%) */}
-        <div className="flex-[7] glass-panel rounded-xl overflow-hidden border border-[#06b6d4]/20 relative">
+        <div className="flex-[7] bg-white rounded-xl overflow-hidden border border-gray-200 relative shadow-[0_1px_3px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.02)]">
           <ThreatGraphCanvas identityId={resolvedParams.identityId} />
           
-          <div className="absolute top-4 left-4 glass-panel px-4 py-2 rounded-lg text-sm font-mono border-[#06b6d4]/50 text-[#06b6d4]">
+          <div className="absolute top-4 left-4 bg-white px-4 py-2 rounded-lg text-sm font-mono border border-gray-200 text-slate-600 shadow-sm z-10">
             ID: {resolvedParams.identityId}
           </div>
         </div>

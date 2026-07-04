@@ -12,6 +12,7 @@ export default function ReportsPage() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const stats = statsData || { total_reports: 0, reports_generated: 0, scheduled_reports: 0, failed_reports: 0 };
   const reports = reportsData?.data || [];
@@ -23,12 +24,15 @@ export default function ReportsPage() {
 
   const handleGenerate = async (type: string, name: string) => {
     setIsGenerating(true);
+    setError(null);
     try {
       await generateReport.mutateAsync({
         name,
         report_type: type,
         filters: {}
       });
+    } catch (err: any) {
+      setError(err.message || 'Unable to generate report.');
     } finally {
       setIsGenerating(false);
     }
@@ -47,7 +51,7 @@ export default function ReportsPage() {
           </p>
         </div>
         <button 
-          onClick={() => handleGenerate('Executive Risk Assessment', 'Q3 Executive Summary')}
+          onClick={() => handleGenerate('Upload Analysis', 'Latest Upload Report')}
           disabled={isGenerating}
           className="btn btn-primary text-xs px-4 h-9 flex items-center gap-2 font-semibold disabled:opacity-50"
         >
@@ -55,6 +59,13 @@ export default function ReportsPage() {
           Generate Report
         </button>
       </div>
+      
+      {error && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg flex items-center gap-3 text-sm font-medium">
+          <AlertCircle className="w-5 h-5 text-rose-500" />
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard title="Total Reports" value={stats.total_reports} desc="Historical records" isLoading={isLoadingStats} />
@@ -140,9 +151,23 @@ export default function ReportsPage() {
                     </td>
                     <td className="p-4 text-right">
                       {report.status === 'COMPLETED' && (
-                        <button className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white hover:bg-slate-50 text-slate-600 transition-colors border border-slate-200 shadow-sm" title="Download PDF">
-                          <Download className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={async () => {
+                              try {
+                                setError(null);
+                                const api = (await import('@/lib/api')).default;
+                                await api.download(`/reports/${report.id}/download`, `report-${report.name.replace(/\s+/g, '_')}.pdf`);
+                              } catch (err: any) {
+                                setError(err.message || 'Download unavailable.');
+                              }
+                            }}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white hover:bg-slate-50 text-slate-600 transition-colors border border-slate-200 shadow-sm" 
+                            title="Download PDF Report"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

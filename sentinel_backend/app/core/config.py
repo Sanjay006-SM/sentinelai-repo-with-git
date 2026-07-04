@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
 
+    # Cloud database URL (Render/Neon)
+    DATABASE_URL: str = ""
+
     # PostgreSQL config
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
@@ -15,10 +18,19 @@ class Settings(BaseSettings):
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
+        # If DATABASE_URL is provided, use it.
+        if self.DATABASE_URL:
+            return self.DATABASE_URL
+    
+        # Otherwise, use local PostgreSQL.
         import urllib.parse
-        encoded_password = urllib.parse.quote(self.POSTGRES_PASSWORD, safe='')
-        return f"postgresql://{self.POSTGRES_USER}:{encoded_password}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        encoded_password = urllib.parse.quote(self.POSTGRES_PASSWORD, safe="")
+        return (
+            f"postgresql://{self.POSTGRES_USER}:{encoded_password}"
+            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
 
+    
     # Neo4j config
     NEO4J_URI: str = "bolt://localhost:7687"
     NEO4J_USER: str = "neo4j"
@@ -40,6 +52,9 @@ class Settings(BaseSettings):
     # JWT Security config
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
+    
+    # Feature Flags
+    ENABLE_GRAPH_EVIDENCE_ENGINE: bool = False
 
     class Config:
         case_sensitive = True

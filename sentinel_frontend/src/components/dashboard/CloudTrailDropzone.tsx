@@ -5,6 +5,7 @@ import { UploadCloud, CheckCircle, AlertTriangle, Terminal } from "lucide-react"
 import { useUploadCloudTrail, useRecentEvents } from "@/lib/queries";
 import { useGlobalStore } from "@/lib/store";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 export default function CloudTrailDropzone() {
   const { mutateAsync: uploadFile } = useUploadCloudTrail();
@@ -55,7 +56,7 @@ export default function CloudTrailDropzone() {
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
-      className={`glass-panel relative overflow-hidden flex flex-col h-[400px] transition-all ${isDragging ? 'border-[#D3F531] shadow-[0_0_15px_rgba(211,245,49,0.3)]' : ''}`}
+      className={`glass-panel relative overflow-hidden flex flex-col h-[400px] hover-transition ${isDragging ? 'border-indigo-500 border-dashed bg-[var(--hover-bg-tint)] shadow-[0_0_15px_rgba(99,102,241,0.2)]' : ''}`}
     >
       {/* Header */}
       <div className="p-4 flex items-center justify-between z-10 border-b border-glass-subtle border bg-glass-subtle rounded-t-[20px]">
@@ -69,7 +70,7 @@ export default function CloudTrailDropzone() {
             <span className="text-xs font-semibold tracking-wide" style={{ color: '#16a34a' }}>Live Polling</span>
           </div>
           <div className="h-4 w-px" style={{ background: 'rgba(203,213,225,0.50)' }}></div>
-          <label className="cursor-pointer flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-md transition-colors" style={{ color: '#D3F531', background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.25)' }}>
+          <label className="cursor-pointer flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-md hover-transition hover:bg-indigo-900/40 hover:scale-[1.02]" style={{ color: '#D3F531', background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.25)' }}>
             <UploadCloud className="w-3.5 h-3.5" />
             <span>Upload Log</span>
             <input 
@@ -142,7 +143,7 @@ export default function CloudTrailDropzone() {
                   duration: 0.5,
                   y: { type: "spring", stiffness: 300, damping: 24 }
                 }}
-                className="flex items-center gap-4 p-2 rounded transition-colors border-b border-glass-subtle border last:border-0"
+                className="group/stream flex items-center gap-4 p-2 rounded hover-transition hover:bg-[var(--hover-bg-tint)] border-b border-glass-subtle border last:border-0"
               >
                 <div className="text-text-muted whitespace-nowrap font-mono text-[11px]">
                   {log.event_time ? new Date(log.event_time).toISOString().split('T')[1].slice(0, 8) : "--:--:--"}
@@ -151,16 +152,16 @@ export default function CloudTrailDropzone() {
                   <span className={`font-bold ${log.event?.includes('Delete') || log.event?.includes('Deny') ? 'text-critical' : 'text-text-primary'}`}>
                     {log.event}
                   </span>
-                  <span className="truncate max-w-[200px] font-mono text-primary" title={log.user}>
+                  <Link href="/identities" className="truncate max-w-[200px] font-mono text-primary hover:underline hover:text-indigo-800" title={log.user}>
                     {log.user?.split('/').pop() || "Unknown"}
-                  </span>
+                  </Link>
                   {log.isAnomaly && (
                     <span className="bg-[#7c2d12] text-[#f97316] border border-[#f97316]/20 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold ml-auto flex-shrink-0">
                       [ANOMALY] {log.anomalyReason}
                     </span>
                   )}
                 </div>
-                <div className={`whitespace-nowrap px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold`}
+                <div className={`whitespace-nowrap px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold transition-transform duration-200 ${log.status === 'Success' ? 'group-hover/stream:scale-110' : ''}`}
                   style={log.status === 'Success' ? { background: 'rgba(22,163,74,0.10)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', borderRadius: '6px' } : { background: 'rgba(220,38,38,0.10)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)', borderRadius: '6px' }}>
                   {log.status}
                 </div>
@@ -172,7 +173,7 @@ export default function CloudTrailDropzone() {
       
       {/* Footer Instructions */}
       <div className="p-2 text-center z-10 bg-glass-subtle border-t border-dashed border-glass-active border">
-        <p className="text-[10px] uppercase tracking-widest text-text-muted" style={{ letterSpacing: '0.08em' }}>Drag and drop CloudTrail JSON here to upload manually</p>
+        <p className={`text-[10px] uppercase tracking-widest hover-transition ${isDragging ? 'text-indigo-600 font-bold' : 'text-text-muted'}`} style={{ letterSpacing: '0.08em' }}>Drag and drop CloudTrail JSON here to upload manually</p>
       </div>
     </div>
   );

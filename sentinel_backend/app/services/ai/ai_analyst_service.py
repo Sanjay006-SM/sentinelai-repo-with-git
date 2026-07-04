@@ -29,13 +29,13 @@ class AIAnalystService:
             f"Gemini API call failed. Retrying (attempt {retry_state.attempt_number})..."
         )
     )
-    def _call_gemini_api(self, prompt: str) -> str:
+    def _call_gemini_api(self, prompt: str, response_mime_type: str = "application/json") -> str:
         # Note: the new SDK config format
         response = self.client.models.generate_content(
             model='gemini-3.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
-                response_mime_type="application/json"
+                response_mime_type=response_mime_type
             )
         )
         return response.text
@@ -164,4 +164,32 @@ class AIAnalystService:
                 "error": str(e)
             }))
             return "AI Summary unavailable."
+
+    def generate_finding_explanation(self, prompt: str) -> str:
+        """
+        Generates a plain-text explanation for a specific finding based on graph evidence.
+        Uses existing retry and error handling. Returns None on failure.
+        """
+        logger.info(json.dumps({
+            "stage": "AI_EXPLAINABILITY_GENERATION",
+            "status": "STARTED"
+        }))
+        try:
+            response_text = self._call_gemini_api(prompt, response_mime_type="text/plain")
+            if not response_text:
+                raise ValueError("Received empty explanation from AI")
+            
+            logger.info(json.dumps({
+                "stage": "AI_EXPLAINABILITY_GENERATION",
+                "status": "SUCCESS"
+            }))
+            return response_text.strip()
+        except Exception as e:
+            logger.error(json.dumps({
+                "stage": "AI_EXPLAINABILITY_GENERATION",
+                "status": "FAILED",
+                "error": str(e),
+                "stack_trace": traceback.format_exc()
+            }))
+            return None
 

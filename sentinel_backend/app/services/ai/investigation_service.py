@@ -12,7 +12,7 @@ class InvestigationService:
         self.builder = PromptBuilder()
         self.ai = AIAnalystService()
 
-    def investigate(self, identity_id: str, workspace_id: str) -> Dict[str, Any]:
+    def investigate(self, identity_id: str, workspace_id: str, investigation_id: str = None) -> Dict[str, Any]:
         # 1. Collect Evidence
         evidence = self.collector.collect_evidence(identity_id, workspace_id)
         if not evidence or "error" in evidence:
@@ -22,6 +22,6 @@ class InvestigationService:
         prompt = self.builder.build_investigation_prompt(evidence)
         
         # 3. Analyze via LLM
-        report = self.ai.call_llm(prompt)
+        report = self.ai.call_llm(prompt, workspace_id=workspace_id, identity_id=identity_id, investigation_id=investigation_id)
         
         return report

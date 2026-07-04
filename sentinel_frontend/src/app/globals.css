@@ -11,7 +11,7 @@
   --color-primary-hover: #4338CA;
 
   /* --- Text --- */
-  --color-text-primary: #0F172A;
+  --color-text-primary: #0F0F1A;
   --color-text-secondary: #334155;
   --color-text-muted: #64748B;
 
@@ -35,6 +35,104 @@
 }
 
 /* ============================================================================
+   Graph Canvas Theme Variables
+   ============================================================================ */
+:root {
+  --graph-bg: #FAFAFA;
+  --graph-dot-color: #E5E7EB;
+  
+  --node-bg: #FFFFFF;
+  --node-text: #1E1B4B;
+  --node-border: rgba(99, 102, 241, 0.4);
+  --node-border-active: #6366F1;
+  
+  --node-shadow: 0 2px 8px rgba(99,102,241,0.08);
+  --node-shadow-hover: 0 4px 12px rgba(99,102,241,0.15);
+  
+  --node-identity-bg: #EEF2FF;
+  --node-identity-text: #4338CA;
+  
+  --node-ip-border: #F59E0B;
+  --node-policy-border: #7C3AED;
+  
+  --edge-color: #A5B4FC;
+  --edge-color-hover: #6366F1;
+  --edge-label-bg: #F3F4F6;
+  --edge-label-text: #111827;
+
+  /* Dashboard Hover Interactions */
+  --hover-lift: -3px;
+  --hover-shadow-color: 99, 102, 241;
+  --hover-shadow: 0 8px 20px rgba(var(--hover-shadow-color), 0.12);
+  --hover-border: #C7D2FE;
+  --hover-bg-tint: #F5F6FF;
+
+  /* Global Shared Elevation Scale */
+  --shadow-xs: 0 1px 2px rgba(15,15,26,0.04);
+  --shadow-sm: 0 2px 8px rgba(15,15,26,0.06);
+  --shadow-md: 0 8px 20px rgba(99,102,241,0.10);
+  --shadow-lg: 0 16px 40px rgba(99,102,241,0.14);
+  --shadow-glow: 0 0 32px rgba(124,58,237,0.18);
+  --shadow-sidebar-hover: 0 12px 28px rgba(99,102,241,0.18), 0 4px 10px rgba(15,15,26,0.06);
+  --glow-blue: 59, 130, 246; /* #3B82F6 */
+}
+
+/* --- React Flow Controls Override --- */
+.react-flow__controls-button {
+  background-color: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-bottom: none !important;
+  color: #64748B !important;
+  transition: all 150ms ease !important;
+}
+.react-flow__controls-button:last-child {
+  border-bottom: 1px solid #E2E8F0 !important;
+}
+.react-flow__controls-button:hover {
+  background-color: #F8FAFC !important;
+  color: #4F46E5 !important;
+}
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+}
+.react-flow__controls {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+/* Edge draw animation */
+@keyframes edgeDrawIn {
+  from {
+    stroke-dashoffset: 100%;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.edge-draw-in {
+  stroke-dasharray: 100%;
+  animation: edgeDrawIn 1.5s ease-out forwards;
+}
+
+/* Dashboard Interactions */
+.hover-transition {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out,
+              border-color 0.2s ease-out, background-color 0.2s ease-out;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(124, 58, 237, 0.1), inset 0 0 5px rgba(124, 58, 237, 0.05); }
+  50% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3), inset 0 0 10px rgba(124, 58, 237, 0.1); }
+}
+.copilot-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .copilot-glow { animation: none !important; }
+}
+
+/* ============================================================================
    Base Styles
    ============================================================================ */
 
@@ -48,6 +146,17 @@
     font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Universal Transitions */
+  a, button, input, select, textarea, [role="button"], .card, .nav-item, .badge, .pill {
+    transition: color 0.2s ease, background-color 0.2s ease,
+                border-color 0.2s ease, box-shadow 0.2s ease,
+                transform 0.2s ease, opacity 0.2s ease;
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -58,6 +167,79 @@
   ::selection {
     background: rgba(79, 70, 229, 0.15);
     color: #1E1B4B;
+  }
+}
+
+/* ============================================================================
+   Shared Global Utilities
+   ============================================================================ */
+@layer utilities {
+  .btn-gradient {
+    background: linear-gradient(135deg, #6366F1 0%, #7C3AED 100%);
+    color: #FFFFFF;
+    border: none;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-gradient:hover {
+    background: linear-gradient(135deg, #4F46E5 0%, #6D28D9 100%);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #6366F1 0%, #7C3AED 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-radial-wash {
+    background: radial-gradient(circle at center, rgba(124, 58, 237, 0.04) 0%, rgba(255, 255, 255, 0) 70%);
+  }
+
+  .sidebar-nav-item {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.2s ease-out,
+                background-color 0.2s ease-out,
+                color 0.2s ease-out;
+    transform-origin: left center;
+  }
+  
+  .sidebar-nav-item:not(.active):hover, 
+  .sidebar-nav-item:not(.active):focus-visible {
+    transform: translateY(-3px) scale(1.035);
+    box-shadow: var(--shadow-sidebar-hover);
+    background-color: #F5F6FF;
+    z-index: 10;
+  }
+  
+  .sidebar-nav-item.active {
+    background-color: #EEF2FF;
+    color: #4F46E5;
+    border: 1px solid #C7D2FE;
+    font-weight: 600;
+  }
+  
+  .sidebar-nav-item.active:hover,
+  .sidebar-nav-item.active:focus-visible {
+    transform: translateY(-1px);
+    z-index: 10;
+  }
+
+  .content-card-glow {
+    transition: border-color 0.3s ease-out, box-shadow 0.2s ease-out, transform 0.2s ease-out, filter 0.2s ease-out;
+  }
+  
+  .content-card-glow:hover,
+  .content-card-glow:focus-visible {
+    border-color: rgba(var(--glow-blue), 0.9) !important;
+    box-shadow:
+      0 0 0 1px rgba(var(--glow-blue), 0.4),
+      0 0 16px 2px rgba(var(--glow-blue), 0.35),
+      0 0 32px 8px rgba(var(--glow-blue), 0.18) !important;
+    filter: brightness(1.02);
+    z-index: 10;
   }
 }
 

@@ -24,7 +24,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="pt-[140px] pb-20 px-6 flex flex-col items-center justify-start relative z-10 bg-slate-50">
+    <section className="pt-[140px] pb-20 px-6 flex flex-col items-center justify-start relative z-10 bg-slate-50 bg-radial-wash">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -40,7 +40,7 @@ export default function Hero() {
 
         {/* Headline */}
         <motion.h1 variants={itemVariants} className="font-[family-name:var(--font-jakarta)] font-extrabold text-[clamp(36px,5.5vw,72px)] leading-[1.1] tracking-[-0.03em] mb-6 text-slate-900 max-w-[850px]">
-          Protect Machine Identities Before They Become Attack Paths
+          Protect Machine Identities Before They Become <span className="text-gradient-primary">Attack Paths</span>
         </motion.h1>
 
         {/* Subheadline */}
@@ -53,14 +53,14 @@ export default function Hero() {
           <motion.div whileHover={{ translateY: -1 }} whileTap={{ scale: 0.97 }}>
             <Link
               href="/login?redirect=onboarding"
-              className="inline-flex items-center justify-center px-8 py-3.5 bg-indigo-600 text-white text-base font-semibold rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-md shadow-indigo-100"
+              className="inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold rounded-xl btn-gradient"
             >
               Start Free Trial
             </Link>
           </motion.div>
           <motion.div whileHover={{ translateY: -1 }} whileTap={{ scale: 0.97 }}>
             <button
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-xl transition-all duration-200 text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-xl text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-[var(--shadow-xs)]"
             >
               Book Demo <Play className="w-4 h-4 fill-current text-slate-400" />
             </button>

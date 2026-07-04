@@ -13,6 +13,7 @@ export default function RiskFindingsPage() {
   const activeFindings = recentFindings
     ? recentFindings.map(f => ({
         id: f.id.slice(0, 8).toUpperCase(),
+        fullId: f.id,
         severity: f.severity.toUpperCase() as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
         title: f.finding_type,
         identity: f.identity_arn.split("/").pop() || f.identity_arn,
@@ -139,6 +140,13 @@ export default function RiskFindingsPage() {
               </div>
 
               <div className="flex items-center gap-3">
+                <Link 
+                  href={`/risk-findings/${finding.fullId}`}
+                  className="h-9 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg flex items-center gap-2 text-xs transition-all font-semibold shadow-sm"
+                >
+                  View Details
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
                 <Link 
                   href={`/ai-investigation?identityId=${finding.resources}`}
                   className="h-9 px-4 border border-slate-200 hover:border-indigo-400 text-slate-700 hover:text-indigo-600 rounded-lg flex items-center gap-2 text-xs bg-white transition-all font-semibold shadow-sm"

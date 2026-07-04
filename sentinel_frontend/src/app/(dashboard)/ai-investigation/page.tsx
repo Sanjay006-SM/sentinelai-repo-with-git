@@ -29,6 +29,13 @@ export default function AIInvestigationPage() {
     try {
       const report = await runAiInvestigate({ identity_id: identityId });
       
+      if (report.success === false) {
+        // Handle sanitized enterprise errors without crashing
+        const friendlyMessage = `Sorry, I'm unable to answer this investigation right now.\n\nThe AI service is temporarily unavailable.\n\nPlease try again later.`;
+        setDynamicMessages(prev => [...prev, { role: 'ai', content: friendlyMessage }]);
+        return;
+      }
+      
       // Construct detailed AI response from backend Gemini results
       const aiResponseText = `
 ### Executive Summary
@@ -41,15 +48,17 @@ ${report.risk_assessment}
 ${report.attack_path_analysis}
 
 ### Findings
-${report.findings.map(f => `• ${f}`).join("\n")}
+${report.findings.map((f: string) => `• ${f}`).join("\n")}
 
 ### Recommendations
-${report.recommendations.map(r => `• ${r}`).join("\n")}
+${report.recommendations.map((r: string) => `• ${r}`).join("\n")}
       `.trim();
 
       setDynamicMessages(prev => [...prev, { role: 'ai', content: aiResponseText }]);
     } catch (err: any) {
-      setDynamicMessages(prev => [...prev, { role: 'ai', content: `Investigation failed: ${err.message || 'Identity not found in databases.'}` }]);
+      // Fallback network error or complete API failure
+      const friendlyMessage = `Sorry, I'm unable to answer this investigation right now.\n\nThe AI service is temporarily unavailable.\n\nPlease try again later.`;
+      setDynamicMessages(prev => [...prev, { role: 'ai', content: friendlyMessage }]);
     }
   };
 
