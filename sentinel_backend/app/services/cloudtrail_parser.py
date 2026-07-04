@@ -2,6 +2,9 @@ from typing import List, Dict, Any
 from app.schemas.cloudtrail import CloudTrailEvent, CloudTrailLogFile
 from pydantic import ValidationError
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CloudTrailParser:
     @staticmethod
@@ -40,17 +43,18 @@ class CloudTrailParser:
         normalized = CloudTrailParser.normalize_json(json_data)
         
         records = normalized.get("Records", [])
-        if not records:
-            raise ValueError("Unsupported CloudTrail format. Expected CloudTrail event or Records array.")
 
         validated_events = []
         for idx, record in enumerate(records):
             if not isinstance(record, dict):
-                raise ValueError(f"Unsupported CloudTrail format. Record at index {idx} is not a valid JSON object.")
+                logger.warning(f"Record at index {idx} is not a valid JSON object. Skipping.")
+                continue
             if "eventID" not in record or not record["eventID"]:
-                raise ValueError("Unsupported CloudTrail format. Missing eventID.")
+                logger.warning("Missing eventID in record. Skipping.")
+                continue
             if "eventTime" not in record or not record["eventTime"]:
-                raise ValueError("Unsupported CloudTrail format. Missing eventTime.")
+                logger.warning("Missing eventTime in record. Skipping.")
+                continue
             
             # Verify timestamp format
             try:
@@ -59,14 +63,19 @@ class CloudTrailParser:
                     # Check ISO format
                     datetime.fromisoformat(record["eventTime"].replace('Z', '+00:00'))
             except Exception:
-                raise ValueError("Unsupported CloudTrail format. Invalid timestamp.")
+                logger.warning(f"Invalid timestamp in record: {record['eventTime']}. Skipping.")
+                continue
 
             try:
                 event_model = CloudTrailEvent(**record)
                 validated_events.append(event_model)
             except ValidationError as e:
                 # Map standard validation errors to user-friendly messages
-                raise ValueError(f"Unsupported CloudTrail format. Validation failed: {str(e)}")
+                logger.warning(f"Validation failed for event {record.get('eventID')}: {str(e)}. Skipping.")
+                continue
+
+        if not validated_events and records:
+            raise ValueError("Unsupported CloudTrail format. All records failed validation.")
 
         return validated_events
 
@@ -87,6 +96,14 @@ class CloudTrailParser:
                     account = event.recipientAccountId or "unknown"
                     resource_arn = f"arn:aws:iam::{account}:role/{params.get('roleName')}"
             
+        # Generate synthetic ARN if missing (common for AWS service-generated events)
+        identity_arn = "unknown"
+        if event.userIdentity and event.userIdentity.arn:
+            identity_arn = event.userIdentity.arn
+        elif event.userIdentity and event.userIdentity.invokedBy:
+            account = event.recipientAccountId or "unknown"
+            identity_arn = f"arn:aws:iam::{account}:service/{event.userIdentity.invokedBy}"
+            
         return {
             "event_id": event.eventID,
             "event_time": event.eventTime,
@@ -94,7 +111,7 @@ class CloudTrailParser:
             "event_source": event.eventSource,
             "aws_region": event.awsRegion,
             "source_ip": event.sourceIPAddress,
-            "identity_arn": event.userIdentity.arn or "unknown",
+            "identity_arn": identity_arn,
             "resource_arn": resource_arn,
             "account_id": event.recipientAccountId,
             "raw_event_json": event.model_dump(mode='json')

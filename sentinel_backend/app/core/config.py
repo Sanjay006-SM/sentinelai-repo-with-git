@@ -42,10 +42,8 @@ class Settings(BaseSettings):
     @model_validator(mode='before')
     @classmethod
     def resolve_neo4j_user(cls, data: any) -> any:
-        if isinstance(data, dict):
-            username = data.get("NEO4J_USERNAME") or data.get("neo4j_username")
-            if username and not (data.get("NEO4J_USER") or data.get("neo4j_user")):
-                data["NEO4J_USER"] = username
+        # Force the neo4j user to be neo4j to avoid terminal environment override bugs
+        data["NEO4J_USER"] = "neo4j"
         return data
 
     # Gemini config

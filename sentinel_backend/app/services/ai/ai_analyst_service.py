@@ -144,7 +144,7 @@ class AIAnalystService:
         try:
             # We don't want JSON here, just plain text
             response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-3.5-flash',
                 contents=prompt
             )
             summary = response.text.strip()
