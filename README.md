@@ -147,12 +147,14 @@ If you want the AI chat feature to work, you need to provide a Google Gemini API
 This section is for developers and security engineers looking to understand the technical architecture and features of SentinelAI.
 
 ## 🌟 Key Features
-- **CloudTrail Ingestion:** Securely ingests and parses AWS CloudTrail logs from S3 buckets.
+- **Hybrid Ingestion Platform:** Supports live, automated AWS CloudTrail API synchronization (`boto3`) and manual offline log uploads.
+- **Secure Integration Management:** Securely stores cloud credentials using AES-128-CBC Fernet encryption for multi-tenant isolation.
 - **Machine Identity Discovery:** Automatically extracts AWS IAM Roles and service users from logs.
 - **Identity Inventory:** A comprehensive dashboard to track identities, showing first-seen, last-seen, and event volume.
 - **Behavioral Risk Scoring:** Heuristic and behavioral risk-scoring engine (0-100) based on permission sensitivity, behavior deviation, and privilege escalation potential.
 - **Attack Path Visualization:** Interactive graphs mapping relationships between identities, accessed resources, and potential escalation paths.
-- **AI Security Analyst:** An LLM-powered chat interface capable of answering natural language security questions based on CloudTrail behavior.
+- **AI Security Analyst (Copilot):** An LLM-powered chat interface (Gemini 3.5 Flash) capable of answering natural language security questions, fortified with enterprise-grade error handling.
+- **Executive Reporting:** Generates professional PDF summaries using strictly constrained prompts to eliminate AI hallucinations.
 
 ## 🏗️ Technical Architecture
 
