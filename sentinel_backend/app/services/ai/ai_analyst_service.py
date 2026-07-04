@@ -1,6 +1,8 @@
 import os
 import json
 import logging
+import time
+import traceback
 from typing import Dict, Any
 from google import genai
 from google.genai import types
@@ -38,19 +40,23 @@ class AIAnalystService:
         )
         return response.text
 
-    def call_llm(self, prompt: str) -> Dict[str, Any]:
+    def call_llm(self, prompt: str, workspace_id: str = "unknown", identity_id: str = "unknown", investigation_id: str = "unknown", user_id: str = "system") -> Dict[str, Any]:
         """
         Calls Gemini 3.5 Flash with retry and timeout constraints, returning the parsed JSON.
         """
-        logger.info("Calling Gemini 3.5 Flash for identity investigation...")
-        raw_response = ""
+        logger.info(f"Calling Gemini 3.5 Flash for identity investigation (ID: {investigation_id})...")
+        start_time = time.time()
+        retry_count = 0 # Handled by tenacity, but we can capture failure state here
+        
         try:
             raw_response = self._call_gemini_api(prompt)
             if not raw_response:
                 raise ValueError("Received empty response from Gemini API.")
             
-            # Parse the JSON response
-            parsed_response = json.loads(raw_response)
+            try:
+                parsed_response = json.loads(raw_response)
+            except json.JSONDecodeError as je:
+                raise ValueError(f"JSON Parsing Error: {str(je)}")
             
             # Validate output keys
             required_keys = ["executive_summary", "risk_assessment", "attack_path_analysis", "findings", "recommendations"]
@@ -58,9 +64,104 @@ class AIAnalystService:
                 if key not in parsed_response:
                     parsed_response[key] = "" if "analysis" in key or "summary" in key or "assessment" in key else []
             
+            parsed_response["success"] = True
             return parsed_response
             
         except Exception as e:
-            logger.error(f"Error in AIAnalystService: {e}", exc_info=True)
-            raise ValueError(f"AI Analysis Failed: {str(e)}")
+            duration = time.time() - start_time
+            error_str = str(e).lower()
+            error_type = type(e).__name__
+            
+            # 1. Map to enterprise error codes
+            code = "UNKNOWN_ERROR"
+            message = "An unexpected error occurred during AI analysis."
+            
+            if "json parsing error" in error_str:
+                code = "AI_RESPONSE_INVALID"
+                message = "The AI service returned an invalid response format."
+            elif "401" in error_str or "403" in error_str or "api_key" in error_str or "unauthenticated" in error_str:
+                code = "AI_AUTH_FAILED"
+                message = "AI service authentication failed."
+            elif "429" in error_str or "quota" in error_str or "rate limit" in error_str or "exhausted" in error_str:
+                code = "AI_RATE_LIMITED"
+                message = "AI service rate limit exceeded. Please try again later."
+            elif "timeout" in error_str or "deadline" in error_str:
+                code = "AI_TIMEOUT"
+                message = "The AI service timed out."
+            elif "503" in error_str or "500" in error_str or "unavailable" in error_str or "internal" in error_str:
+                code = "AI_SERVICE_UNAVAILABLE"
+                message = "The AI service is temporarily unavailable."
+            elif "invalid argument" in error_str or "400" in error_str:
+                code = "AI_INVALID_REQUEST"
+                message = "The AI service rejected the request."
+
+            # 2. Log complete exception securely in the backend
+            logger.error(
+                json.dumps({
+                    "event": "AI_INVESTIGATION_FAILED",
+                    "workspace_id": workspace_id,
+                    "investigation_id": investigation_id,
+                    "user_id": user_id,
+                    "identity_id": identity_id,
+                    "provider": "gemini-3.5-flash",
+                    "latency_ms": round(duration * 1000, 2),
+                    "failure_reason": str(e),
+                    "exception_type": error_type,
+                    "retry_count": retry_count,
+                    "stack_trace": traceback.format_exc()
+                })
+            )
+            
+            # 3. Return sanitized error object
+            return {
+                "success": False,
+                "code": code,
+                "message": message
+            }
+
+    def generate_executive_report_summary(self, metrics: Dict[str, Any]) -> str:
+        """
+        Generates an executive summary strictly based on the provided metrics.
+        Includes a validation constraint against hallucinations.
+        """
+        logger.info(json.dumps({
+            "stage": "AI_SUMMARY_GENERATION",
+            "status": "STARTED"
+        }))
+        prompt = f"""
+        You are a Principal Cloud Security Architect. Generate a concise, professional executive summary 
+        for an enterprise security report based strictly on the following metrics.
+        
+        CRITICAL CONSTRAINT: DO NOT hallucinate any numbers, identities, or risks. 
+        Only use the data provided below. If data is zero or missing, state that clearly.
+        
+        Metrics:
+        {json.dumps(metrics, indent=2)}
+        
+        Return ONLY the raw text summary paragraphs. No markdown formatting, no titles.
+        """
+        
+        try:
+            # We don't want JSON here, just plain text
+            response = self.client.models.generate_content(
+                model='gemini-3.5-flash',
+                contents=prompt
+            )
+            summary = response.text.strip()
+            # Simple validation: ensure it's not empty
+            if not summary:
+                raise ValueError("AI returned empty summary")
+            
+            logger.info(json.dumps({
+                "stage": "AI_SUMMARY_GENERATION",
+                "status": "SUCCESS"
+            }))
+            return summary
+        except Exception as e:
+            logger.error(json.dumps({
+                "stage": "AI_SUMMARY_GENERATION",
+                "status": "FAILED",
+                "error": str(e)
+            }))
+            return "AI Summary unavailable."
 

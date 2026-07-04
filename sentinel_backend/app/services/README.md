@@ -21,7 +21,7 @@ The system utilizes a hybrid data architecture combining relational and graph da
 
 ### Data Flow
 
-1. **Ingestion & Conflict Resolution:** Raw logs from diverse sources are parsed and safely upserted into the PostgreSQL database, utilizing native conflict resolution (`ON CONFLICT DO NOTHING`) to prevent duplicate events.
+1. **Hybrid Ingestion & Conflict Resolution:** Raw logs from diverse sources (AWS CloudTrail, manual file uploads) are fetched via the `ingestion_sources` platform. They are parsed and safely upserted into the PostgreSQL database, utilizing native conflict resolution (`ON CONFLICT DO NOTHING`) to prevent duplicate events.
 2. **Context Loading:** A target machine identity is loaded for evaluation. This process can be triggered globally across all entities or incrementally for active identities during log ingestion.
 3. **Hybrid Heuristic Evaluation:** The orchestrator triggers multiple discrete heuristic rules concurrently. Depending on the required access pattern, these rules query either Neo4j or PostgreSQL, returning localized score penalties and descriptive reasoning.
 4. **Normalization & Severity Assignment:** Cumulative penalties are aggregated, strictly bounded to a 0-100 range, and assigned a severity classification (Critical, High, Medium, or Low).

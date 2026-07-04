@@ -1,9 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Any, Dict
 from datetime import datetime
 
 class UserIdentity(BaseModel):
-    type: str
+    model_config = ConfigDict(extra='ignore')
+    
+    type: Optional[str] = None
     principalId: Optional[str] = None
     arn: Optional[str] = None
     accountId: Optional[str] = None
@@ -15,13 +17,15 @@ class Resource(BaseModel):
     type: Optional[str] = None
 
 class CloudTrailEvent(BaseModel):
-    eventVersion: str
-    userIdentity: UserIdentity
+    model_config = ConfigDict(extra='ignore')
+    
+    eventVersion: Optional[str] = None
+    userIdentity: Optional[UserIdentity] = Field(default_factory=UserIdentity)
     eventTime: datetime
-    eventSource: str
-    eventName: str
-    awsRegion: str
-    sourceIPAddress: str
+    eventSource: Optional[str] = None
+    eventName: Optional[str] = None
+    awsRegion: Optional[str] = None
+    sourceIPAddress: Optional[str] = None
     userAgent: Optional[str] = None
     errorCode: Optional[str] = None
     errorMessage: Optional[str] = None
@@ -30,7 +34,7 @@ class CloudTrailEvent(BaseModel):
     eventID: str
     eventType: Optional[str] = "AwsApiCall"
     readOnly: Optional[bool] = None
-    resources: Optional[List[Resource]] = []
+    resources: Optional[List[Resource]] = Field(default_factory=list)
     recipientAccountId: Optional[str] = None
 
 class CloudTrailLogFile(BaseModel):
