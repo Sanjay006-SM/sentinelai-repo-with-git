@@ -8,3 +8,4 @@ from app.models.tenant import Organization, User, Workspace
 from app.models.notification import Notification
 from app.models.audit_log import AuditLog
 from app.models.report import Report, ScheduledReport
+from app.models.integration import Integration

@@ -10,6 +10,8 @@ from app.api.dependencies import get_db, get_current_workspace
 from app.models.ingestion_job import IngestionJob
 from app.models.tenant import User, Workspace
 from app.services.ingestion import IngestionService
+from app.services.ingestion_sources.base import IngestionSource
+from app.services.ingestion_sources.file_upload import FileUploadSource
 
 from app.core.events.bus import event_bus
 from app.core.events.contracts import AuditEvent
@@ -18,8 +20,8 @@ from app.core.events.event_types import ActorClassification, EventCategory, Even
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-def process_file_background(file_content: bytes, job_id: str, filename: str = None, workspace_id: str = None) -> dict:
-    """Background task to process the file, normalize, validate and update the job status."""
+def execute_ingestion_pipeline(source: IngestionSource, job_id: str, workspace_id: str = None) -> dict:
+    """Background task to fetch events from the source, normalize, validate and update the job status."""
     from app.db.session import SessionLocal
     from app.services.graph_sync_service import GraphSyncService
     from app.services.risk_engine import RiskEngine
@@ -29,24 +31,19 @@ def process_file_background(file_content: bytes, job_id: str, filename: str = No
     start_time = time.time()
     db = SessionLocal()
     
-    print("\n------------------------------------------------")
-    print(f"Upload Started")
-    print(f"filename={filename or 'unknown'}")
-    print("------------------------------------------------")
-    
     try:
-        # Load raw JSON
-        if not file_content:
-            raise ValueError("Uploaded file is empty.")
-        try:
-            # Decode using utf-8-sig to automatically strip BOM if present
-            decoded_content = file_content.decode('utf-8-sig')
-            json_data = json.loads(decoded_content)
-        except json.JSONDecodeError as e:
-            # Print the first 100 characters for debugging if it's malformed
-            preview = file_content[:100]
-            print(f"JSONDecodeError: {str(e)}. Content preview: {preview}")
-            raise ValueError("Malformed JSON upload file.")
+        # Get metadata
+        meta = source.get_source_metadata()
+        identifier = meta.get("identifier", "unknown")
+        source_type = meta.get("sourceType", "unknown")
+
+        print("\n------------------------------------------------")
+        print(f"Ingestion Started [{source_type}]")
+        print(f"identifier={identifier}")
+        print("------------------------------------------------")
+
+        # Fetch raw JSON via the source
+        json_data = source.fetch_events()
 
         # Normalization Info Logging
         if isinstance(json_data, list):
@@ -92,7 +89,7 @@ def process_file_background(file_content: bytes, job_id: str, filename: str = No
             db.commit()
             
         ingestion_service = IngestionService(db)
-        stats = ingestion_service.process_cloudtrail_json(json_data, job_id=job_id, filename=filename, workspace_id=workspace_id)
+        stats = ingestion_service.process_cloudtrail_json(json_data, job_id=job_id, filename=identifier, workspace_id=workspace_id)
         
         print("Ingestion")
         print(f"Inserted:\n{stats['inserted']}")
@@ -210,8 +207,11 @@ async def upload_cloudtrail_logs(
         db.commit()
         db.refresh(job)
         
+        # Initialize the file upload source
+        source = FileUploadSource(content, file.filename)
+
         # Process the file synchronously for real-time UI updates and gather stats
-        stats = process_file_background(content, str(job.job_id), file.filename, str(workspace.id))
+        stats = execute_ingestion_pipeline(source, str(job.job_id), str(workspace.id))
         
         event_bus.publish(AuditEvent(
             workspace_id=str(workspace.id),
