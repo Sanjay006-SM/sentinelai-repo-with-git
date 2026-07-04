@@ -13,3 +13,5 @@ PyJWT
 bcrypt
 cryptography
 boto3
+reportlab
+
