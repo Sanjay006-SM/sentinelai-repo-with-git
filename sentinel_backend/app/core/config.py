@@ -38,13 +38,7 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str = "12Asdf*#_"
     NEO4J_DATABASE: str = "neo4j"
 
-    from pydantic import model_validator
-    @model_validator(mode='before')
-    @classmethod
-    def resolve_neo4j_user(cls, data: any) -> any:
-        # Force the neo4j user to be neo4j to avoid terminal environment override bugs
-        data["NEO4J_USER"] = "neo4j"
-        return data
+    # The hardcoded resolve_neo4j_user validator was removed to prevent overriding Render environment variables.
 
     # Gemini config
     GEMINI_API_KEY: str = ""
@@ -59,6 +53,7 @@ class Settings(BaseSettings):
     class Config:
         case_sensitive = True
         env_file = ".env"
+        str_strip_whitespace = True
 
 
 settings = Settings()
