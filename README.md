@@ -147,14 +147,15 @@ If you want the AI chat feature to work, you need to provide a Google Gemini API
 This section is for developers and security engineers looking to understand the technical architecture and features of SentinelAI.
 
 ## 🌟 Key Features
-- **Hybrid Ingestion Platform:** Supports live, automated AWS CloudTrail API synchronization (`boto3`) and manual offline log uploads.
-- **Secure Integration Management:** Securely stores cloud credentials using AES-128-CBC Fernet encryption for multi-tenant isolation.
-- **Machine Identity Discovery:** Automatically extracts AWS IAM Roles and service users from logs.
-- **Identity Inventory:** A comprehensive dashboard to track identities, showing first-seen, last-seen, and event volume.
+- **Hybrid Ingestion Platform:** Supports live, automated AWS CloudTrail API synchronization (`boto3`) and manual offline log uploads via a dedicated Integrations Dashboard.
+- **Secure Integration Management:** Securely stores cloud credentials (supporting IAM User access keys and cross-account STS Role assumption) using AES-128-CBC Fernet encryption for multi-tenant isolation.
+- **Organization & Workspace Settings:** Multi-tenant isolation boundaries that allow authenticated users who belong to multiple organizations to switch contexts cleanly.
+- **Machine Identity Discovery & Inventory:** Automatically extracts AWS IAM Roles and service users from logs, displaying a comprehensive dashboard to track identities (first-seen, last-seen, and event volume).
 - **Behavioral Risk Scoring:** Heuristic and behavioral risk-scoring engine (0-100) based on permission sensitivity, behavior deviation, and privilege escalation potential.
-- **Attack Path Visualization:** Interactive graphs mapping relationships between identities, accessed resources, and potential escalation paths.
-- **AI Security Analyst (Copilot):** An LLM-powered chat interface (Gemini 3.5 Flash) capable of answering natural language security questions, fortified with enterprise-grade error handling.
-- **Executive Reporting:** Generates professional PDF summaries using strictly constrained prompts to eliminate AI hallucinations.
+- **Threat Graph Canvas (Attack Path Visualization):** Interactive graphs mapping relationships between identities, accessed resources, and potential escalation paths. Enables zooming, panning, and node-expansion to visually explore the blast radius of compromised identities.
+- **Explainability & Graph Evidence Engine:** Serves as a trust layer between deterministic databases (Neo4j/PostgreSQL) and the AI. Extracts direct traversal paths and heuristic anomalies, serializing raw deterministic evidence into constrained JSON structures to prevent AI hallucinations.
+- **AI Security Analyst (Copilot):** An LLM-powered chat interface (Gemini) capable of answering natural language security questions, fortified with enterprise-grade error handling and backed by the Graph Evidence Engine.
+- **Storage & Executive Reporting:** Generates professional PDF summaries using strictly constrained prompts and provides a unified interface for handling file-based assets (reports, manual `.log` uploads, and database export archives).
 
 ## 🏗️ Technical Architecture
 
