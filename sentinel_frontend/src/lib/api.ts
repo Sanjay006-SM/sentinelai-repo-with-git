@@ -1,13 +1,14 @@
 import { useGlobalStore } from './store';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ai-nexus-backend-cndm.onrender.com/api/v1';
+const BASE_URL = rawUrl.endsWith('/api/v1') ? rawUrl : `${rawUrl.replace(/\/$/, '')}/api/v1`;
 
 class ApiClient {
   async get(endpoint: string) {
     console.log(`[API GET Request]: ${BASE_URL}${endpoint}`);
     const workspaceId = useGlobalStore.getState().currentWorkspaceId;
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    
+
     // Add auth token if exists in localStorage
     if (typeof window !== 'undefined') {
       const tokenStr = localStorage.getItem('auth-storage');
@@ -17,10 +18,10 @@ class ApiClient {
           if (tokenData.state && tokenData.state.token) {
             headers['Authorization'] = `Bearer ${tokenData.state.token}`;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }
-    
+
     if (workspaceId) {
       headers['X-Workspace-ID'] = workspaceId;
     }
@@ -43,12 +44,12 @@ class ApiClient {
   async post(endpoint: string, body: any, customHeaders: Record<string, string> = {}) {
     console.log(`[API POST Request]: ${BASE_URL}${endpoint}`);
     const isFormData = body instanceof FormData;
-    
+
     const reqHeaders: Record<string, string> = { ...customHeaders };
     if (!isFormData && !reqHeaders['Content-Type']) {
       reqHeaders['Content-Type'] = 'application/json';
     }
-    
+
     // Add auth token if exists in localStorage
     if (typeof window !== 'undefined') {
       const tokenStr = localStorage.getItem('auth-storage');
@@ -58,7 +59,7 @@ class ApiClient {
           if (tokenData.state && tokenData.state.token) {
             reqHeaders['Authorization'] = `Bearer ${tokenData.state.token}`;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
@@ -88,7 +89,7 @@ class ApiClient {
             }
           }
           else errorMsg = JSON.stringify(errorData);
-        } catch (e) {}
+        } catch (e) { }
         throw new Error(errorMsg);
       }
       const data = await res.json();
@@ -102,12 +103,12 @@ class ApiClient {
 
   async put(endpoint: string, body: any, customHeaders: Record<string, string> = {}) {
     console.log(`[API PUT Request]: ${BASE_URL}${endpoint}`);
-    
+
     const reqHeaders: Record<string, string> = { ...customHeaders };
     if (!reqHeaders['Content-Type']) {
       reqHeaders['Content-Type'] = 'application/json';
     }
-    
+
     if (typeof window !== 'undefined') {
       const tokenStr = localStorage.getItem('auth-storage');
       if (tokenStr) {
@@ -116,7 +117,7 @@ class ApiClient {
           if (tokenData.state && tokenData.state.token) {
             reqHeaders['Authorization'] = `Bearer ${tokenData.state.token}`;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
@@ -146,7 +147,7 @@ class ApiClient {
             }
           }
           else errorMsg = JSON.stringify(errorData);
-        } catch (e) {}
+        } catch (e) { }
         throw new Error(errorMsg);
       }
       const data = await res.json();
@@ -161,7 +162,7 @@ class ApiClient {
     console.log(`[API DOWNLOAD Request]: ${BASE_URL}${endpoint}`);
     const workspaceId = useGlobalStore.getState().currentWorkspaceId;
     const headers: Record<string, string> = {};
-    
+
     if (typeof window !== 'undefined') {
       const tokenStr = localStorage.getItem('auth-storage');
       if (tokenStr) {
@@ -170,10 +171,10 @@ class ApiClient {
           if (tokenData.state && tokenData.state.token) {
             headers['Authorization'] = `Bearer ${tokenData.state.token}`;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }
-    
+
     if (workspaceId) {
       headers['X-Workspace-ID'] = workspaceId;
     }
@@ -191,10 +192,10 @@ class ApiClient {
           if (errorData.detail) {
             errorMsg = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
           }
-        } catch (e) {}
+        } catch (e) { }
         throw new Error(errorMsg);
       }
-      
+
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
