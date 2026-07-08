@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function CtaBanner() {
   return (
-    <section className="w-full py-24 relative z-10 overflow-hidden px-6 bg-slate-50">
+    <section id="demo-video" className="w-full py-24 relative z-10 overflow-hidden px-6 bg-slate-50">
       <motion.div 
         initial={{ scale: 0.98, opacity: 0 }}
         whileInView={{ scale: 1, opacity: 1 }}

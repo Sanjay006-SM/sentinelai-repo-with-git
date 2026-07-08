@@ -14,8 +14,8 @@ export default function ArchitectureSection() {
   ];
 
   return (
-    <section className="w-full py-24 bg-slate-50 border-b border-slate-200 relative z-10">
-      <div className="max-w-[1100px] mx-auto px-6">
+    <section id="platform" className="w-full py-24 bg-slate-50 border-b border-slate-200 relative z-10">
+      <div className="max-w-[1200px] mx-auto px-6">
         
         {/* Section Heading */}
         <div className="text-center mb-16">
@@ -31,10 +31,10 @@ export default function ArchitectureSection() {
         </div>
 
         {/* Horizontal flow line on desktop */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-4 relative">
+        <div className="flex flex-col lg:flex-row flex-wrap items-center justify-center gap-6 lg:gap-3 relative">
           {nodes.map((node, i) => (
             <div key={i} className="flex flex-col lg:flex-row items-center gap-4 lg:gap-2 w-full lg:w-auto relative">
-              <div className="flex flex-col items-center p-5 rounded-2xl bg-white border border-slate-200 shadow-sm w-full lg:w-44 text-center hover:border-indigo-400 transition-all">
+              <div className="flex flex-col items-center p-4 rounded-2xl bg-white border border-slate-200 shadow-sm w-full lg:w-[150px] text-center hover:border-indigo-400 transition-all">
                 <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-3">
                   {node.icon}
                 </div>

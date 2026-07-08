@@ -65,10 +65,10 @@ export default function Pricing() {
             </div>
             
             <Link
-              href="/login?redirect=onboarding"
+              href="/signup"
               className="w-full py-3.5 text-center font-semibold rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors"
             >
-              Start Free
+              Get Started Free
             </Link>
           </motion.div>
 
@@ -85,7 +85,7 @@ export default function Pricing() {
 
             <h3 className="font-[family-name:var(--font-jakarta)] text-2xl font-bold text-slate-900 mb-2 mt-2">Pro</h3>
             <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-4xl font-extrabold text-slate-900 tracking-tight">$299</span>
+              <span className="text-4xl font-extrabold text-slate-900 tracking-tight">$499</span>
               <span className="text-slate-500 font-medium">/ month</span>
             </div>
             <p className="text-slate-500 text-sm mb-8">Up to 10,000 identities</p>
@@ -107,10 +107,10 @@ export default function Pricing() {
             </div>
             
             <Link
-              href="/login?redirect=onboarding"
+              href="/signup"
               className="w-full py-3.5 text-center text-white bg-indigo-600 font-semibold rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
             >
-              Start Free Trial
+              Start 14-Day Trial
             </Link>
           </motion.div>
 
@@ -142,7 +142,7 @@ export default function Pricing() {
             </div>
             
             <Link
-              href="/login"
+              href="/signup"
               className="w-full py-3.5 text-center font-semibold rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors"
             >
               Contact Sales

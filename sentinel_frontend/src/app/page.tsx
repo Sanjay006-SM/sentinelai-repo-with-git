@@ -15,7 +15,7 @@ import BackgroundEffects from "@/components/landing/BackgroundEffects";
 
 export default function LandingPage() {
   return (
-    <div className="landing-page-wrapper relative overflow-hidden font-sans bg-slate-50">
+    <div className="landing-page-wrapper relative overflow-hidden font-sans bg-slate-50 min-h-screen flex flex-col">
       <BackgroundEffects />
       <Navbar />
       <main>

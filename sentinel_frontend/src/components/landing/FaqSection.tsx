@@ -34,7 +34,7 @@ export default function FaqSection() {
   };
 
   return (
-    <section className="w-full py-24 bg-white border-b border-slate-200 relative z-10">
+    <section id="faq" className="w-full py-24 bg-white border-b border-slate-200 relative z-10">
       <div className="max-w-[800px] mx-auto px-6">
         
         {/* Section Heading */}

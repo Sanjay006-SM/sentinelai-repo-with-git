@@ -30,9 +30,9 @@ export default function Footer() {
         {/* Col 2 */}
         <div className="flex flex-col gap-3">
           <h4 className="font-semibold text-slate-900 mb-2">Platform</h4>
-          {['Identity Center', 'Threat Graph', 'Risk Center', 'SentinelAI Copilot'].map(link => (
-            <Link key={link} href="#" className="text-slate-500 text-sm hover:text-slate-900 transition-colors">
-              {link}
+          {[{name: 'Identity Center', href: '/#features'}, {name: 'Threat Graph', href: '/#platform'}, {name: 'Risk Center', href: '/#security'}, {name: 'SentinelAI Copilot', href: '/#features'}].map(link => (
+            <Link key={link.name} href={link.href} className="text-slate-500 text-sm hover:text-slate-900 transition-colors">
+              {link.name}
             </Link>
           ))}
         </div>
@@ -40,9 +40,9 @@ export default function Footer() {
         {/* Col 3 */}
         <div className="flex flex-col gap-3">
           <h4 className="font-semibold text-slate-900 mb-2">Resources</h4>
-          {['Documentation', 'Solutions', 'Security', 'Trust Center'].map(link => (
-            <Link key={link} href="#" className="text-slate-500 text-sm hover:text-slate-900 transition-colors">
-              {link}
+          {[{name: 'Documentation', href: '/#documentation'}, {name: 'Solutions', href: '/#solutions'}, {name: 'Security', href: '/#security'}, {name: 'Trust Center', href: '/#company'}].map(link => (
+            <Link key={link.name} href={link.href} className="text-slate-500 text-sm hover:text-slate-900 transition-colors">
+              {link.name}
             </Link>
           ))}
         </div>
@@ -50,9 +50,9 @@ export default function Footer() {
         {/* Col 4 */}
         <div className="flex flex-col gap-3">
           <h4 className="font-semibold text-slate-900 mb-2">Legal & Trust</h4>
-          {['Privacy Policy', 'Terms of Service', 'Status'].map(link => (
-            <Link key={link} href="#" className="text-slate-500 text-sm hover:text-slate-900 transition-colors">
-              {link}
+          {[{name: 'Privacy Policy', href: '/privacy'}, {name: 'Terms of Service', href: '/terms'}, {name: 'Status', href: '/status'}].map(link => (
+            <Link key={link.name} href={link.href} className="text-slate-500 text-sm hover:text-slate-900 transition-colors">
+              {link.name}
             </Link>
           ))}
         </div>

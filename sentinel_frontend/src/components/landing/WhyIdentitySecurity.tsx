@@ -27,7 +27,7 @@ export default function WhyIdentitySecurity() {
   ];
 
   return (
-    <section className="w-full py-24 bg-white border-b border-slate-200 relative z-10">
+    <section id="security" className="w-full py-24 bg-white border-b border-slate-200 relative z-10">
       <div className="max-w-[1100px] mx-auto px-6">
         
         {/* Section Heading */}

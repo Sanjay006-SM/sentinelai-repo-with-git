@@ -22,7 +22,7 @@ export default function ProblemSection() {
   ];
 
   return (
-    <section className="w-full py-24 bg-white border-y border-slate-200 z-10 relative">
+    <section id="company" className="w-full py-24 bg-white border-y border-slate-200 z-10 relative">
       <div className="max-w-[1100px] mx-auto px-6">
         {/* Section Heading */}
         <div className="text-center mb-16">
