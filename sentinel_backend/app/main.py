@@ -14,11 +14,23 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    neo4j_manager.connect()
+    # Startup — Neo4j connection is best-effort: if it fails the app still serves
+    # HTTP/Postgres routes. Graph routes will return 503 individually.
+    try:
+        neo4j_manager.connect()
+        logger.info("Neo4j connected successfully.")
+    except Exception as neo4j_err:
+        logger.critical(
+            "Neo4j connection failed at startup: %s — "
+            "Graph features will be unavailable but the rest of the API is still running.",
+            neo4j_err,
+        )
     yield
     # Shutdown
-    neo4j_manager.close()
+    try:
+        neo4j_manager.close()
+    except Exception:
+        pass
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
