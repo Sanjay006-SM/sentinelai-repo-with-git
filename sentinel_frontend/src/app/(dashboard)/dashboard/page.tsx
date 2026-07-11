@@ -131,7 +131,7 @@ export default function CommandCenter() {
           </h2>
           <div className="flex flex-col gap-3 flex-1">
             {identities?.slice(0, 4).map(id => (
-              <Link href={`/identities/${id.id}`} key={id.id} className="group/row flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-100 hover-transition hover:bg-[var(--hover-bg-tint)] hover:border-[var(--hover-border)] cursor-pointer">
+              <Link href={`/canvas/${id.id}`} key={id.id} className="group/row flex justify-between...">
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-semibold text-slate-900 group-hover/row:text-slate-900 truncate">{(id.arn.split("/").pop() || id.arn).split(":").pop()}</span>
                   <span className="text-[10px] text-slate-400 truncate group-hover/row:text-slate-500">{id.arn.slice(0, 30)}...</span>
