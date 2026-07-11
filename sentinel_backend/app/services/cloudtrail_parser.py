@@ -113,6 +113,10 @@ class CloudTrailParser:
             "source_ip": event.sourceIPAddress,
             "identity_arn": identity_arn,
             "resource_arn": resource_arn,
-            "account_id": event.recipientAccountId,
+            "account_id": (
+                            event.recipientAccountId
+                            or event.userIdentity.accountId
+                            or "unknown"
+                            ),    
             "raw_event_json": event.model_dump(mode='json')
         }
