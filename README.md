@@ -1,6 +1,12 @@
 # SentinelAI 🛡️
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Access_Platform-blue?style=for-the-badge&logo=vercel)](https://ai-nexus-2eas.vercel.app/)
+
 **SentinelAI** is a Machine Identity Risk Intelligence Platform designed to provide enterprise security teams with unparalleled, actionable intelligence into the machine identity lifecycle. It transforms opaque cloud service accounts, APIs, and IAM roles into trackable, risk-quantified assets.
+
+### 🌐 Live Application Access
+You can access the fully deployed, production-ready version of SentinelAI here: 
+**👉 [https://ai-nexus-2eas.vercel.app/](https://ai-nexus-2eas.vercel.app/)**
 
 ---
 
