@@ -2,6 +2,8 @@
 
 **SentinelAI** is a Machine Identity Risk Intelligence Platform designed to provide enterprise security teams with unparalleled, actionable intelligence into the machine identity lifecycle. It transforms opaque cloud service accounts, APIs, and IAM roles into trackable, risk-quantified assets.
 
+🔗 **Live Demo:** [https://ai-nexus-2eas.vercel.app/](https://ai-nexus-2eas.vercel.app/)
+
 ---
 
 # 📖 The Beginner's Guide
