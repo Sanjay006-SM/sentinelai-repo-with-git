@@ -1,0 +1,45 @@
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict
+
+class IdentityEvidence(BaseModel):
+    arn: str = Field(..., description="The AWS ARN of the identity.")
+    type: str = Field(..., description="The type of the machine identity (e.g. IAMUser, IAMRole).")
+    first_seen: Optional[str] = Field(None, description="ISO timestamp of when the identity was first seen.")
+    last_seen: Optional[str] = Field(None, description="ISO timestamp of when the identity was last seen.")
+    total_events: int = Field(default=0, description="Total number of logged events for this identity.")
+
+class RiskScoreEvidence(BaseModel):
+    score: float = Field(..., description="The calculated risk score.")
+    severity: str = Field(..., description="Risk severity level (e.g., Low, Medium, High, Critical).")
+    reasons: List[str] = Field(default_factory=list, description="List of reasons contributing to the risk score.")
+
+class ActivityEvidence(BaseModel):
+    event_name: str = Field(..., description="The name of the CloudTrail event.")
+    event_source: str = Field(..., description="The AWS service source of the event.")
+    time: str = Field(..., description="ISO timestamp of the event.")
+    resource: Optional[str] = Field(None, description="The ARN of the resource accessed.")
+    source_ip: Optional[str] = Field(None, description="The source IP address of the request.")
+
+class AttackPathEvidence(BaseModel):
+    nodes_count: int = Field(default=0, description="Number of nodes in the attack path graph.")
+    edges_count: int = Field(default=0, description="Number of edges in the attack path graph.")
+    traversal_summary: str = Field(..., description="Summary string of the graph traversal.")
+    edges: List[str] = Field(default_factory=list, description="Unique relationship types found in the path.")
+
+class RiskEvidence(BaseModel):
+    """
+    Enterprise contract for evidence collected during an AI investigation.
+    Combines relational telemetry, graph relationships, and pre-calculated risk metrics.
+    """
+    identity: IdentityEvidence
+    risk: RiskScoreEvidence
+    recent_activity: List[ActivityEvidence] = Field(default_factory=list)
+    attack_path: AttackPathEvidence
+    relationship_counts: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Dictionary of relationship counts (e.g. accessed_resource_count, assumed_role_count)."
+    )
+    sensitive_resource_access_summary: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Counts of sensitive API actions grouped by service."
+    )
