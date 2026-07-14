@@ -1,4 +1,13 @@
+import json
+import logging
+import time
 from app.services.langgraph.state import WorkflowState
+from app.services.ai.evidence_collector import EvidenceCollector
+from app.db.session import SessionLocal
+from app.graph.session import neo4j_manager
+from app.services.langgraph.adapters import adapt_to_risk_evidence
+
+logger = logging.getLogger(__name__)
 
 def validate_input(state: WorkflowState) -> WorkflowState:
     """
@@ -16,7 +25,46 @@ def retrieve_evidence(state: WorkflowState) -> WorkflowState:
     Populates the state.evidence field.
     """
     state.node_history.append("retrieve_evidence")
-    raise NotImplementedError("Evidence retrieval logic not yet implemented.")
+    
+    start_time = time.time()
+    db = SessionLocal()
+    graph = neo4j_manager.get_session()
+    
+    try:
+        collector = EvidenceCollector(db, graph)
+        raw_evidence = collector.collect_evidence(state.identity_id, state.workspace_id)
+        
+        if "error" in raw_evidence:
+            raise ValueError(f"Evidence collection failed: {raw_evidence['error']}")
+            
+        risk_evidence = adapt_to_risk_evidence(raw_evidence)
+        state.evidence = risk_evidence
+        
+        duration = time.time() - start_time
+        num_items = len(risk_evidence.recent_activity)
+        
+        logger.info(json.dumps({
+            "event": "EVIDENCE_RETRIEVAL_SUCCESS",
+            "request_id": state.request_id,
+            "identity_id": state.identity_id,
+            "workspace_id": state.workspace_id,
+            "duration_ms": round(duration * 1000, 2),
+            "evidence_items": num_items
+        }))
+        
+        return state
+    except Exception as e:
+        logger.error(json.dumps({
+            "event": "EVIDENCE_RETRIEVAL_FAILED",
+            "request_id": state.request_id,
+            "identity_id": state.identity_id,
+            "workspace_id": state.workspace_id,
+            "error": str(e)
+        }))
+        raise
+    finally:
+        db.close()
+        graph.close()
 
 def generate_ai_draft(state: WorkflowState) -> WorkflowState:
     """
