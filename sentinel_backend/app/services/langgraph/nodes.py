@@ -6,8 +6,18 @@ from app.services.ai.evidence_collector import EvidenceCollector
 from app.db.session import SessionLocal
 from app.graph.session import neo4j_manager
 from app.services.langgraph.adapters import adapt_to_risk_evidence
+from app.services.prompts.prompt_manager import PromptManager
+from app.services.ai.prompt_builder import PromptBuilder
+from app.services.ai.ai_analyst_service import AIAnalystService
+from app.schemas.ai_response import AIResponse
+from pydantic import ValidationError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 logger = logging.getLogger(__name__)
+
+class TransientAIError(Exception):
+    pass
+
 
 def validate_input(state: WorkflowState) -> WorkflowState:
     """
@@ -66,13 +76,117 @@ def retrieve_evidence(state: WorkflowState) -> WorkflowState:
         db.close()
         graph.close()
 
+def _invoke_ai_with_retry(prompt: str, request_id: str, identity_id: str, workspace_id: str) -> dict:
+    analyst = AIAnalystService()
+    
+    # Actually call the underlying service
+    result = analyst.call_llm(
+        prompt=prompt,
+        workspace_id=workspace_id,
+        identity_id=identity_id,
+        investigation_id=request_id
+    )
+    
+    if not result.get("success"):
+        code = result.get("code")
+        msg = result.get("message")
+        
+        # Retry only for transient failures
+        if code in ["AI_TIMEOUT", "AI_RATE_LIMITED", "AI_SERVICE_UNAVAILABLE", "UNKNOWN_ERROR"]:
+            raise TransientAIError(f"Transient provider failure ({code}): {msg}")
+        else:
+            # Programmer errors, invalid inputs, auth failed, json parsing (which shouldn't be retried per requirements)
+            raise ValueError(f"Non-transient AI failure ({code}): {msg}")
+            
+    return result
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type(TransientAIError),
+    reraise=True
+)
+def _generate_draft_retryable(prompt: str, request_id: str, identity_id: str, workspace_id: str) -> dict:
+    return _invoke_ai_with_retry(prompt, request_id, identity_id, workspace_id)
+
 def generate_ai_draft(state: WorkflowState) -> WorkflowState:
     """
     Calls the LLM with the provided evidence to generate an initial draft response.
     Populates the state.ai_draft field.
     """
     state.node_history.append("generate_ai_draft")
-    raise NotImplementedError("AI draft generation logic not yet implemented.")
+    
+    if not state.evidence:
+        raise ValueError("Cannot generate AI draft: RiskEvidence is missing from state.")
+        
+    start_time = time.time()
+    state.generation_started_at = start_time
+    
+    try:
+        # Load templates (Not injecting them to PromptBuilder since it doesn't accept templates, 
+        # but we use PromptManager as instructed and reuse prompt_builder for the base structure)
+        manager = PromptManager()
+        sys_prompt = manager.get_system_prompt("v1")
+        
+        # Convert evidence back to dict for the legacy builder
+        evidence_dict = state.evidence.model_dump()
+        base_prompt = PromptBuilder.build_investigation_prompt(evidence_dict)
+        
+        # Combine them
+        full_prompt = sys_prompt + "\n\n" + base_prompt
+        
+        # Call AI with tenacity retry
+        raw_response = _generate_draft_retryable(
+            prompt=full_prompt, 
+            request_id=state.request_id,
+            identity_id=state.identity_id,
+            workspace_id=state.workspace_id
+        )
+        
+        # Validate schema
+        try:
+            ai_draft = AIResponse(**raw_response)
+        except ValidationError as e:
+            raise ValueError(f"Schema validation failed: {e}")
+            
+        state.ai_draft = ai_draft
+        state.generation_completed_at = time.time()
+        duration_ms = (state.generation_completed_at - start_time) * 1000
+        state.latency_ms = duration_ms
+        
+        state.provider_name = "google"
+        state.model_name = "gemini-3.5-flash"
+        state.prompt_version = "v1"
+        
+        logger.info(json.dumps({
+            "event": "AI_GENERATION_SUCCESS",
+            "request_id": state.request_id,
+            "identity_id": state.identity_id,
+            "workspace_id": state.workspace_id,
+            "execution_time_ms": round(duration_ms, 2),
+            "provider_name": state.provider_name,
+            "model_name": state.model_name,
+            "prompt_version": state.prompt_version,
+            "success": True
+        }))
+        
+        return state
+        
+    except Exception as e:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.error(json.dumps({
+            "event": "AI_GENERATION_FAILED",
+            "request_id": state.request_id,
+            "identity_id": state.identity_id,
+            "workspace_id": state.workspace_id,
+            "execution_time_ms": round(duration_ms, 2),
+            "provider_name": "google",
+            "model_name": "gemini-3.5-flash",
+            "prompt_version": "v1",
+            "success": False,
+            "error": str(e)
+        }))
+        raise
 
 def extract_claims(state: WorkflowState) -> WorkflowState:
     """
