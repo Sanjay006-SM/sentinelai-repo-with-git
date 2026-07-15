@@ -56,8 +56,9 @@ class TestGenerateAIDraft(unittest.TestCase):
             "code": "AI_RESPONSE_INVALID",
             "message": "JSON error"
         }
-        with self.assertRaisesRegex(ValueError, "Non-transient AI failure"):
-            generate_ai_draft(self.state)
+        state = generate_ai_draft(self.state)
+        self.assertIsNotNone(state.error_message)
+        self.assertIn("Non-transient AI failure", state.error_message)
 
     @patch('app.services.langgraph.nodes.AIAnalystService')
     def test_schema_validation_failure(self, MockAnalyst):
@@ -67,16 +68,18 @@ class TestGenerateAIDraft(unittest.TestCase):
             "executive_summary": "Test Summary"
             # Missing required fields to trigger schema error
         }
-        with self.assertRaisesRegex(ValueError, "Schema validation failed"):
-            generate_ai_draft(self.state)
+        state = generate_ai_draft(self.state)
+        self.assertIsNotNone(state.error_message)
+        self.assertIn("Schema validation failed", state.error_message)
 
     @patch('app.services.langgraph.nodes._invoke_ai_with_retry')
     def test_provider_timeout_exhaustion(self, mock_invoke):
         mock_invoke.side_effect = TransientAIError("Timeout")
         
         # Should raise TransientAIError after 3 attempts because reraise=True
-        with self.assertRaisesRegex(TransientAIError, "Timeout"):
-            generate_ai_draft(self.state)
+        state = generate_ai_draft(self.state)
+        self.assertIsNotNone(state.error_message)
+        self.assertIn("Timeout", state.error_message)
         
         self.assertEqual(mock_invoke.call_count, 3)
 
@@ -85,8 +88,9 @@ class TestGenerateAIDraft(unittest.TestCase):
         mock_analyst = MockAnalyst.return_value
         # Simulated unexpected exception inside call_llm
         mock_analyst.call_llm.side_effect = Exception("Fatal failure")
-        with self.assertRaisesRegex(Exception, "Fatal failure"):
-            generate_ai_draft(self.state)
+        state = generate_ai_draft(self.state)
+        self.assertIsNotNone(state.error_message)
+        self.assertIn("Fatal failure", state.error_message)
 
     @patch('app.services.langgraph.nodes._invoke_ai_with_retry')
     @patch('app.services.langgraph.nodes.PromptManager')

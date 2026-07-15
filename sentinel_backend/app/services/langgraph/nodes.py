@@ -62,7 +62,6 @@ def retrieve_evidence(state: WorkflowState) -> WorkflowState:
             "evidence_items": num_items
         }))
         
-        return state
     except Exception as e:
         logger.error(json.dumps({
             "event": "EVIDENCE_RETRIEVAL_FAILED",
@@ -71,10 +70,12 @@ def retrieve_evidence(state: WorkflowState) -> WorkflowState:
             "workspace_id": state.workspace_id,
             "error": str(e)
         }))
-        raise
+        state.error_message = str(e)
     finally:
         db.close()
         graph.close()
+        
+    return state
 
 def _invoke_ai_with_retry(prompt: str, request_id: str, identity_id: str, workspace_id: str) -> dict:
     analyst = AIAnalystService()
@@ -186,7 +187,8 @@ def generate_ai_draft(state: WorkflowState) -> WorkflowState:
             "success": False,
             "error": str(e)
         }))
-        raise
+        state.error_message = str(e)
+        return state
 
 def extract_claims(state: WorkflowState) -> WorkflowState:
     """
@@ -194,7 +196,30 @@ def extract_claims(state: WorkflowState) -> WorkflowState:
     Populates state.extracted_claims.
     """
     state.node_history.append("extract_claims")
-    raise NotImplementedError("Claim extraction logic not yet implemented.")
+    from app.services.verification.claim_extractor import ClaimExtractor
+    
+    start_time = time.time()
+    
+    try:
+        if not state.ai_draft:
+            raise ValueError("Cannot extract claims: AI draft is missing from state.")
+            
+        extractor = ClaimExtractor()
+        claims = extractor.extract(state.ai_draft)
+        
+        state.extracted_claims = claims
+        
+        logger.info(json.dumps({
+            "event": "CLAIMS_EXTRACTION_SUCCESS",
+            "request_id": state.request_id,
+            "claims_count": len(claims),
+            "duration_ms": round((time.time() - start_time) * 1000, 2)
+        }))
+    except Exception as e:
+        logger.error(f"Claim extraction failed: {e}")
+        state.error_message = f"Claim extraction failed: {str(e)}"
+        
+    return state
 
 def verify_claims(state: WorkflowState) -> WorkflowState:
     """
@@ -202,7 +227,33 @@ def verify_claims(state: WorkflowState) -> WorkflowState:
     Populates state.verification_results.
     """
     state.node_history.append("verify_claims")
-    raise NotImplementedError("Claim verification logic not yet implemented.")
+    from app.services.verification.verifier import Verifier
+    
+    start_time = time.time()
+    
+    try:
+        if not state.evidence:
+            raise ValueError("Cannot verify claims: RiskEvidence is missing from state.")
+            
+        verifier = Verifier()
+        results = verifier.verify(state.extracted_claims, state.evidence)
+        
+        state.verification_results = results
+        
+        verified_count = sum(1 for r in results if r.is_verified)
+        
+        logger.info(json.dumps({
+            "event": "CLAIMS_VERIFICATION_SUCCESS",
+            "request_id": state.request_id,
+            "verified_count": verified_count,
+            "unverified_count": len(results) - verified_count,
+            "duration_ms": round((time.time() - start_time) * 1000, 2)
+        }))
+    except Exception as e:
+        logger.error(f"Claim verification failed: {e}")
+        state.error_message = f"Claim verification failed: {str(e)}"
+        
+    return state
 
 def calculate_confidence(state: WorkflowState) -> WorkflowState:
     """
@@ -210,7 +261,27 @@ def calculate_confidence(state: WorkflowState) -> WorkflowState:
     Populates state.confidence_score.
     """
     state.node_history.append("calculate_confidence")
-    raise NotImplementedError("Confidence calculation logic not yet implemented.")
+    from app.services.verification.confidence_engine import ConfidenceEngine
+    
+    try:
+        if not state.evidence:
+            raise ValueError("Cannot calculate confidence: RiskEvidence is missing from state.")
+            
+        engine = ConfidenceEngine()
+        score = engine.calculate(state.verification_results, state.evidence)
+        
+        state.confidence_score = score
+        
+        logger.info(json.dumps({
+            "event": "CONFIDENCE_CALCULATION_SUCCESS",
+            "request_id": state.request_id,
+            "confidence_score": score
+        }))
+    except Exception as e:
+        logger.error(f"Confidence calculation failed: {e}")
+        state.error_message = f"Confidence calculation failed: {str(e)}"
+        
+    return state
 
 def attach_citations(state: WorkflowState) -> WorkflowState:
     """
@@ -218,7 +289,30 @@ def attach_citations(state: WorkflowState) -> WorkflowState:
     Populates state.citations.
     """
     state.node_history.append("attach_citations")
-    raise NotImplementedError("Citation attachment logic not yet implemented.")
+    from app.services.verification.citation_engine import CitationEngine
+    
+    start_time = time.time()
+    
+    try:
+        if not state.evidence:
+            raise ValueError("Cannot attach citations: RiskEvidence is missing from state.")
+            
+        engine = CitationEngine()
+        citations = engine.generate_citations(state.verification_results, state.evidence)
+        
+        state.citations = citations
+        
+        logger.info(json.dumps({
+            "event": "CITATION_ATTACHMENT_SUCCESS",
+            "request_id": state.request_id,
+            "citation_count": len(citations),
+            "duration_ms": round((time.time() - start_time) * 1000, 2)
+        }))
+    except Exception as e:
+        logger.error(f"Citation attachment failed: {e}")
+        state.error_message = f"Citation attachment failed: {str(e)}"
+        
+    return state
 
 def build_verified_response(state: WorkflowState) -> WorkflowState:
     """
@@ -226,4 +320,48 @@ def build_verified_response(state: WorkflowState) -> WorkflowState:
     Populates state.final_response.
     """
     state.node_history.append("build_verified_response")
-    raise NotImplementedError("Verified response building logic not yet implemented.")
+    from app.schemas.verified_response import VerifiedResponse
+    
+    try:
+        if not state.ai_draft:
+            raise ValueError("Cannot build final response: AI draft is missing from state.")
+            
+        original = state.ai_draft.model_dump()
+        final = original.copy()
+        
+        # Ensure findings is a list
+        if "findings" not in final or not final["findings"]:
+            final["findings"] = []
+            
+        # Clean up unsupported claims from the final response text
+        for result in state.verification_results:
+            if not result.is_verified and result.correction:
+                # Replace unsupported text with the correction (or remove it)
+                final["executive_summary"] = final["executive_summary"].replace(result.claim, "")
+                final["risk_assessment"] = final["risk_assessment"].replace(result.claim, "")
+                final["attack_path_analysis"] = final["attack_path_analysis"].replace(result.claim, "")
+                for f in final["findings"]:
+                    f["description"] = f["description"].replace(result.claim, "")
+                    
+        final_response = AIResponse(**final)
+        
+        is_fully_verified = all(r.is_verified for r in state.verification_results) if state.verification_results else True
+        
+        state.final_response = VerifiedResponse(
+            original_response=state.ai_draft,
+            verifications=state.verification_results,
+            is_fully_verified=is_fully_verified,
+            confidence_score=state.confidence_score,
+            final_response=final_response
+        )
+        
+        logger.info(json.dumps({
+            "event": "VERIFIED_RESPONSE_BUILT",
+            "request_id": state.request_id,
+            "is_fully_verified": is_fully_verified
+        }))
+    except Exception as e:
+        logger.error(f"Build verified response failed: {e}")
+        state.error_message = f"Build verified response failed: {str(e)}"
+        
+    return state

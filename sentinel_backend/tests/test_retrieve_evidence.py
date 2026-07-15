@@ -57,10 +57,11 @@ class TestRetrieveEvidence(unittest.TestCase):
             "error": "Identity 'unknown' not found."
         }
         
-        with self.assertRaises(ValueError) as context:
-            retrieve_evidence(state)
+        state = retrieve_evidence(state)
+        self.assertIsNotNone(state.error_message)
+        self.assertIn("Identity 'unknown' not found", state.error_message)
             
-        self.assertTrue("Evidence collection failed" in str(context.exception))
+
 
     @patch('app.services.langgraph.nodes.neo4j_manager')
     @patch('app.services.langgraph.nodes.SessionLocal')
@@ -75,10 +76,11 @@ class TestRetrieveEvidence(unittest.TestCase):
         mock_instance = MockCollector.return_value
         mock_instance.collect_evidence.side_effect = Exception("Database timeout")
         
-        with self.assertRaises(Exception) as context:
-            retrieve_evidence(state)
+        state = retrieve_evidence(state)
+        self.assertIsNotNone(state.error_message)
+        self.assertIn("Database timeout", state.error_message)
             
-        self.assertTrue("Database timeout" in str(context.exception))
+
 
 if __name__ == '__main__':
     unittest.main()

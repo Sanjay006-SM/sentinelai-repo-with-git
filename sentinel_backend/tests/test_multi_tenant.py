@@ -8,7 +8,17 @@ from app.models.tenant import Organization, Workspace, User
 from app.models.base import Base
 from app.models.machine_identity import MachineIdentity
 import uuid
+import uuid
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 
+@compiles(JSONB, "sqlite")
+def compile_jsonb_sqlite(type_, compiler, **kw):
+    return "JSON"
+
+@compiles(ARRAY, "sqlite")
+def compile_array_sqlite(type_, compiler, **kw):
+    return "JSON"
 # Setup test DB
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -65,7 +75,10 @@ def test_tenant_isolation(setup_database):
     app.dependency_overrides[get_current_active_user] = lambda: data["user_b"]
     
     # User B requests identities
-    response = client.get("/api/v1/identities")
+    response = client.get(
+        "/api/v1/identities", 
+        headers={"X-Workspace-ID": str(data["ws_b"].id)}
+    )
     assert response.status_code == 200
     identities = response.json()
     
@@ -79,7 +92,10 @@ def test_tenant_isolation(setup_database):
     app.dependency_overrides[get_current_active_user] = lambda: data["user_a"]
     
     # User A requests identities
-    response = client.get("/api/v1/identities")
+    response = client.get(
+        "/api/v1/identities",
+        headers={"X-Workspace-ID": str(data["ws_a"].id)}
+    )
     assert response.status_code == 200
     identities = response.json()
     
