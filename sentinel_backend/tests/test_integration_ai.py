@@ -16,13 +16,17 @@ class MockGraph:
 
 @pytest.fixture
 def mock_evidence_collector():
+    # Patch at the point of use (inside nodes.py) — standard Python mock rule
     with patch('app.services.ai.evidence_collector.EvidenceCollector.collect_evidence') as mock:
         yield mock
 
 @pytest.fixture
 def mock_ai_analyst():
-    with patch('app.services.ai.ai_analyst_service.AIAnalystService.call_llm') as mock:
-        yield mock
+    # Patch AIAnalystService where nodes.py looks it up, and stub __init__ so
+    # genai.Client() is never instantiated (avoids GEMINI_API_KEY errors).
+    with patch('app.services.langgraph.nodes.AIAnalystService') as MockClass:
+        instance = MockClass.return_value
+        yield instance
 
 def test_integration_happy_path(mock_evidence_collector, mock_ai_analyst):
     # Setup mocks
@@ -33,7 +37,7 @@ def test_integration_happy_path(mock_evidence_collector, mock_ai_analyst):
         "attack_path": {"nodes_count": 0, "edges_count": 0, "traversal_summary": "", "edges": []}
     }
     
-    mock_ai_analyst.return_value = {
+    mock_ai_analyst.call_llm.return_value = {
         "success": True,
         "executive_summary": "User arn:aws:iam::123:user/test did a ConsoleLogin",
         "risk_assessment": "High risk",
@@ -70,8 +74,8 @@ def test_integration_ai_failure(mock_evidence_collector, mock_ai_analyst):
         "attack_path": {"nodes_count": 0, "edges_count": 0, "traversal_summary": "", "edges": []}
     }
     
-    # Non-transient failure
-    mock_ai_analyst.return_value = {
+    # Non-transient failure — returned by call_llm on the mocked instance
+    mock_ai_analyst.call_llm.return_value = {
         "success": False,
         "code": "BAD_REQUEST",
         "message": "Invalid input"
