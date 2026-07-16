@@ -161,5 +161,5 @@ class RiskEngine:
                 risk_record = self.evaluate_identity(ident)
                 findings_count += len(risk_record.reasons)
         self.db.commit()
-        logger.info(f"Incremental risk evaluation complete. Findings created: {findings_count}")
+        logger.info("Incremental risk evaluation complete. Findings created: %s", findings_count)
         return findings_count

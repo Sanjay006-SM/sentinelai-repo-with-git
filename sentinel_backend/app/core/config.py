@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     SECRET_KEY: str = ""
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
+    # Stage 1 limits and defaults
+    MAX_RESULTS_PER_POLL: int = 1000
+    MAX_BYTES_PER_POLL: int = 10485760  # 10MB
+    DEDUP_WINDOW_SECONDS: int = 3600
+    PUBLISHER_MAX_SIZE: int = 10000
+
     # Feature Flags
     ENABLE_GRAPH_EVIDENCE_ENGINE: bool = False
 

@@ -122,10 +122,9 @@ def test_cloudtrail_backward_compatibility():
     assert access_log_data["event_id"] == "abcd-1234"
     assert access_log_data["identity_arn"] == "arn:aws:iam::123456789012:user/Alice"
 
-def test_canonical_event_db_insertion():
-    engine = create_engine(settings.SQLALCHEMY_DATABASE_URI)
-    SessionLocal = sessionmaker(bind=engine)
-    db = SessionLocal()
+@pytest.mark.pg
+def test_canonical_event_db_insertion(postgres_db):
+    db = postgres_db
     
     # We must insert a workspace first to respect the foreign key constraint
     from app.models.tenant import Workspace
@@ -169,10 +168,3 @@ def test_canonical_event_db_insertion():
     assert retrieved.event_type == "DB Insert Test"
     assert retrieved.workspace_id == workspace_id
     assert retrieved.severity_normalized == 80
-    
-    # Clean up
-    db.delete(retrieved)
-    db.delete(test_workspace)
-    db.delete(test_org)
-    db.commit()
-    db.close()

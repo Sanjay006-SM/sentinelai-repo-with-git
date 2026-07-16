@@ -8,6 +8,8 @@ interface GlobalState {
   setTheme: (theme: 'Dark' | 'Light' | 'System') => void;
   currentWorkspaceId: string | null;
   setCurrentWorkspaceId: (id: string | null) => void;
+  autoRefreshInterval: number | null;
+  setAutoRefreshInterval: (interval: number | null) => void;
 }
 
 export const useGlobalStore = create<GlobalState>()(
@@ -19,6 +21,8 @@ export const useGlobalStore = create<GlobalState>()(
       setTheme: (theme) => set({ theme }),
       currentWorkspaceId: null,
       setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
+      autoRefreshInterval: 5000,
+      setAutoRefreshInterval: (interval) => set({ autoRefreshInterval: interval }),
     }),
     {
       name: 'cryptonest-storage',
