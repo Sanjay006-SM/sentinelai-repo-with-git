@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str = "12Asdf*#_"
     NEO4J_DATABASE: str = "neo4j"
 
+    # Redis config
+    REDIS_URL: str = os.getenv("REDIS_URL") or "redis://localhost:6379"
+
     # Gemini config
     GEMINI_API_KEY: str = ""
 
@@ -87,6 +90,7 @@ logger.info(
     settings.NEO4J_PASSWORD[:4] if settings.NEO4J_PASSWORD else "N/A",
 )
 logger.info("NEO4J_DATABASE = %s", settings.NEO4J_DATABASE)
+logger.info("REDIS_URL = %s", settings.REDIS_URL)
 logger.info("GOOGLE_CLIENT_ID set = %s", bool(settings.GOOGLE_CLIENT_ID))
 logger.info("SECRET_KEY set = %s", bool(settings.SECRET_KEY))
 logger.info("FRONTEND_URL = %s", settings.FRONTEND_URL or "(not set)")

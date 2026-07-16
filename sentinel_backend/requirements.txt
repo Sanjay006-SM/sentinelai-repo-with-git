@@ -16,3 +16,4 @@ boto3
 reportlab
 google-auth
 requests
+redis>=5.0.0

@@ -57,6 +57,12 @@ class GraphBuilder:
         When an event's time window overlaps multiple existing Incidents, it only joins the first 
         Incident it finds. It does NOT merge the underlying Incidents themselves together. True
         incident merging/consolidation will be addressed in a future version.
+        
+        KNOWN LIMITATION (Deferred v2 item - Stage 4):
+        The risk_worker is currently started via asyncio.create_task in the FastAPI lifespan.
+        This is a TEMPORARY local-dev pattern. Before cloud deployment, it must be replaced 
+        with a standalone worker process/container with proper crash recovery (heartbeat + 
+        handling for jobs orphaned in "running" state after a restart).
         """
         self.session.run(
             q.CORRELATE_INCIDENT,
