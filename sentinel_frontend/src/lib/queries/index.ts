@@ -193,3 +193,12 @@ export const useGenerateReport = () => {
     }
   });
 };
+
+export const useExportReport = () => {
+  return useMutation({
+    mutationFn: async (req: { identity_id?: string; finding_id?: string; filename: string }): Promise<void> => {
+      const { filename, ...body } = req;
+      return await api.postDownload('/reports/export', body, filename);
+    }
+  });
+};

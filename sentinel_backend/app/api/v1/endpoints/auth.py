@@ -1,11 +1,12 @@
 import logging
 import traceback
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.dependencies import get_db, get_current_active_user
+from app.core.limiter import limiter
 from app.core.config import settings
 from app.core.security import hash_password, verify_password, create_access_token
 from app.models.tenant import Organization, User, Workspace
@@ -136,7 +137,8 @@ def register_user(user_in: UserRegister, db: Session = Depends(get_db)):
 # POST /login
 # ─────────────────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=Token)
-def login(user_in: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, user_in: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_in.email).first()
 
     if user and user.provider == "GOOGLE" and not user.password_hash:

@@ -5,6 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
 from app.api.v1.api import api_router
@@ -12,6 +14,7 @@ from app.graph.session import neo4j_manager
 import asyncio
 from app.workers.risk_worker import risk_worker
 from app.core.redis_client import close_redis_client
+from app.core.limiter import limiter
 # Initialize Enterprise Projections
 from app.projections.audit_projector import audit_projector
 
@@ -62,6 +65,7 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan,
 )
+app.state.limiter = limiter
 
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
@@ -143,6 +147,20 @@ app.add_middleware(
     expose_headers=["*"],
     max_age=600,           # Preflight cache: 10 minutes — reduces OPTIONS round-trips
 )
+
+@app.exception_handler(RateLimitExceeded)
+async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    response = JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests, please try again later."}
+    )
+    origin = request.headers.get("origin")
+    if origin in _ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+app.add_middleware(SlowAPIMiddleware)
 
 # Routers are included AFTER middleware so CORS wraps all routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
