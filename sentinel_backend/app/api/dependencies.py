@@ -50,6 +50,32 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+
+# ── RBAC: Role-Based Access Control ─────────────────────────────────────────
+from typing import List
+
+class RoleChecker:
+    """
+    Dependency that enforces role-based access control.
+    Usage: Depends(RoleChecker(["admin"])) or Depends(RoleChecker(["admin", "analyst"]))
+    """
+    def __init__(self, allowed_roles: List[str]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, current_user: User = Depends(get_current_active_user)) -> User:
+        if current_user.role not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Required role: {', '.join(self.allowed_roles)}",
+            )
+        return current_user
+
+# Pre-built role dependencies for convenience
+require_admin = RoleChecker(["admin"])
+require_analyst = RoleChecker(["admin", "analyst"])
+require_viewer = RoleChecker(["admin", "analyst", "viewer"])
+
+
 from fastapi import Header
 from app.models.tenant import Workspace
 

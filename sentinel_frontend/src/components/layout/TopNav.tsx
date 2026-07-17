@@ -4,10 +4,16 @@ import { useState } from "react";
 import { Bell, Search, MessageSquare, Settings, ShieldCheck, ShieldAlert, Sparkles, GitBranch, RefreshCw, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotifications } from "@/lib/queries";
+import { useGlobalStore } from "@/lib/store";
 
 export default function TopNav() {
   const [showNotifications, setShowNotifications] = useState(false);
   const { data: notifications = [], isLoading } = useNotifications();
+  const userFullName = useGlobalStore((state) => state.userFullName);
+  const userRole = useGlobalStore((state) => state.userRole);
+  const initials = userFullName
+    ? userFullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
   
   const unreadCount = notifications.filter((n: any) => !n.read).length;
 
@@ -118,13 +124,13 @@ export default function TopNav() {
         <div className="h-10 pl-1.5 pr-3 rounded-xl flex items-center gap-2.5 bg-slate-50 border border-slate-200 shadow-sm ml-1">
           <div className="relative">
             <div className="w-7.5 h-7.5 rounded-lg bg-indigo-600 flex items-center justify-center overflow-hidden text-white font-bold text-xs">
-              AD
+              {initials}
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-slate-800 leading-tight">Admin</span>
-            <span className="text-[9px] font-medium text-slate-400">Workspace User</span>
+            <span className="text-[11px] font-bold text-slate-800 leading-tight">{userFullName || 'User'}</span>
+            <span className="text-[9px] font-medium text-slate-400 capitalize">{userRole || 'viewer'}</span>
           </div>
         </div>
       </div>

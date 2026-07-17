@@ -14,6 +14,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const setCurrentWorkspaceId = useGlobalStore((state) => state.setCurrentWorkspaceId);
+  const setUserRole = useGlobalStore((state) => state.setUserRole);
+  const setUserFullName = useGlobalStore((state) => state.setUserFullName);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +30,10 @@ export default function LoginPage() {
         const me = await api.get('/auth/me');
         if (me.workspace && me.workspace.id) {
           setCurrentWorkspaceId(me.workspace.id);
+        }
+        if (me.user) {
+          setUserRole(me.user.role || 'viewer');
+          setUserFullName(me.user.full_name || 'User');
         }
         window.location.href = "/dashboard";
       }
@@ -47,6 +53,10 @@ export default function LoginPage() {
         const me = await api.get('/auth/me');
         if (me.workspace && me.workspace.id) {
           setCurrentWorkspaceId(me.workspace.id);
+        }
+        if (me.user) {
+          setUserRole(me.user.role || 'viewer');
+          setUserFullName(me.user.full_name || 'User');
         }
         window.location.href = "/dashboard";
       }

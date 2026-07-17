@@ -47,7 +47,7 @@ export function ConnectorConfigModal({ isOpen, onClose, connector }: ConnectorCo
       // Assuming success if no exception is thrown
       onClose();
     } catch (err: any) {
-      setErrorMsg(err?.response?.data?.message || err.message || "Failed to configure connector");
+      setErrorMsg(err.message || "Failed to configure connector");
     }
   };
 

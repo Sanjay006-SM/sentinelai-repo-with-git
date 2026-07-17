@@ -35,20 +35,32 @@ export function ConnectorCard({ connector, onConfigure }: ConnectorCardProps) {
     }
   };
 
-  const statusColor = STAGE1_CONFIG.UI_MAPS.CONNECTOR_STATUS_COLORS[connector.status] || "bg-slate-100 text-slate-700";
+  const statusClasses = STAGE1_CONFIG.UI_MAPS.CONNECTOR_STATUS_COLORS[connector.status] || "bg-slate-100 text-slate-700";
   const statusLabel = STAGE1_CONFIG.UI_MAPS.CONNECTOR_STATUS_LABELS[connector.status] || connector.status;
   const displayName = STAGE1_CONFIG.UI_MAPS.CONNECTOR_NAMES[connector.provider] || connector.name || connector.provider;
+
+  // Separate background and text color for icon container
+  const iconBgMap: Record<string, string> = {
+    available: "bg-slate-100 text-slate-600",
+    coming_soon: "bg-slate-50 text-slate-400",
+    configured: "bg-indigo-50 text-indigo-600",
+    syncing: "bg-blue-50 text-blue-600",
+    success: "bg-emerald-50 text-emerald-600",
+    synced_no_new_events: "bg-amber-50 text-amber-600",
+    error: "bg-rose-50 text-rose-600",
+  };
+  const iconColors = iconBgMap[connector.status] || "bg-slate-100 text-slate-600";
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-4 shadow-sm hover:border-slate-300 transition-all">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className={`p-2 rounded-lg border ${statusColor.split(' ')[0]} ${statusColor.split(' ')[1]} bg-opacity-20`}>
+          <div className={`p-2 rounded-lg border border-slate-200 ${iconColors}`}>
             {getProviderIcon(connector.provider)}
           </div>
           <h3 className="font-bold text-slate-900 text-sm">{displayName}</h3>
         </div>
-        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${statusColor} border-opacity-30`}>
+        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-slate-200 ${statusClasses}`}>
           {statusLabel}
         </span>
       </div>

@@ -193,3 +193,23 @@ export const useGenerateReport = () => {
     }
   });
 };
+
+// ── MITRE ATT&CK & Compliance ──────────────────────────────────────────
+
+export const useMitreTechniques = () => {
+  return useQuery({
+    queryKey: ['mitreTechniques'],
+    queryFn: async (): Promise<{techniques: any[], total: number}> => {
+      return await api.get('/mitre/techniques');
+    }
+  });
+};
+
+export const useComplianceScores = () => {
+  return useQuery({
+    queryKey: ['complianceScores'],
+    queryFn: async (): Promise<any> => {
+      return await api.get('/mitre/compliance');
+    }
+  });
+};
