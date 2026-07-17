@@ -61,6 +61,24 @@ class RiskEvidence(BaseModel):
     score: Optional[int] = Field(default=None, ge=0, le=100, description="Overall risk score from 0 to 100")
     severity: Optional[Literal["Critical", "High", "Medium", "Low"]] = Field(default=None, description="Risk severity level")
     incidents: List[IncidentDetail] = Field(default_factory=list, description="Nested incident/path detail")
+
+    # Stage 3/4 — MITRE ATT&CK mapping
+    mitre_techniques: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of MITRE ATT&CK techniques mapped to this identity's activity"
+    )
+
+    # Stage 4 — Blast Radius
+    blast_radius: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Blast radius analysis: reachable nodes, affected resources, blast score"
+    )
+
+    # Stage 4 — Compliance Mapping
+    compliance: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Compliance posture: per-framework scores and violated controls"
+    )
     
     @field_validator('severity')
     @classmethod

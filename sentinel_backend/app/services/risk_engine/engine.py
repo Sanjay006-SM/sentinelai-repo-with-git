@@ -9,6 +9,9 @@ from app.models.tenant import Workspace
 from app.services.legacy.risk_factor_calculator import RiskFactorCalculator
 from app.services.risk_engine.path_analyzer import PathAnalyzer
 from app.services.risk_engine.vector_calculator import VectorCalculator
+from app.services.risk_engine.mitre_mapper import MitreMapper
+from app.services.risk_engine.blast_radius import BlastRadiusAnalyzer
+from app.services.risk_engine.compliance_mapper import ComplianceMapper
 from app.schemas.risk_evidence import RiskEvidence, IncidentDetail
 
 from app.core.events.bus import event_bus
@@ -24,6 +27,9 @@ class RiskEngine:
         self.legacy_calculator = RiskFactorCalculator(db, graph)
         self.path_analyzer = PathAnalyzer(db, graph)
         self.vector_calculator = VectorCalculator()
+        self.mitre_mapper = MitreMapper()
+        self.blast_radius_analyzer = BlastRadiusAnalyzer(graph)
+        self.compliance_mapper = ComplianceMapper()
 
     def _calculate_legacy_score(self, identity: MachineIdentity) -> int:
         total_score = 0
@@ -62,6 +68,47 @@ class RiskEngine:
         score = self.vector_calculator.calculate_score(attack_paths)
         severity = self.vector_calculator.calculate_severity(score)
         
+        # Phase 3: MITRE ATT&CK Mapping
+        mitre_techniques = []
+        try:
+            from app.models.access_log import AccessLog
+            recent_events = self.db.query(AccessLog).filter(
+                AccessLog.identity_arn == identity.arn,
+                AccessLog.workspace_id == identity.workspace_id
+            ).order_by(AccessLog.event_time.desc()).limit(100).all()
+
+            seen_techniques = set()
+            for event in recent_events:
+                mappings = self.mitre_mapper.map_event(
+                    event.event_name or "",
+                    vendor="aws",
+                    metadata=event.raw_event if isinstance(event.raw_event, dict) else {}
+                )
+                for mapping in mappings:
+                    tid = mapping["technique_id"]
+                    if tid not in seen_techniques:
+                        seen_techniques.add(tid)
+                        mitre_techniques.append(mapping)
+        except Exception as e:
+            logger.warning("MITRE mapping failed for %s (non-fatal): %s", identity.arn, e)
+
+        # Phase 4: Blast Radius Analysis
+        blast_radius_data = None
+        try:
+            blast_result = self.blast_radius_analyzer.analyze(identity.arn, str(identity.workspace_id))
+            blast_radius_data = blast_result.to_dict()
+        except Exception as e:
+            logger.warning("Blast radius analysis failed for %s (non-fatal): %s", identity.arn, e)
+
+        # Phase 5: Compliance Mapping
+        compliance_data = None
+        try:
+            if mitre_techniques:
+                technique_ids = [t["technique_id"] for t in mitre_techniques]
+                compliance_data = self.compliance_mapper.get_compliance_score(technique_ids)
+        except Exception as e:
+            logger.warning("Compliance mapping failed for %s (non-fatal): %s", identity.arn, e)
+
         # Generate incidents
         incidents = []
         if attack_paths:
@@ -72,11 +119,31 @@ class RiskEngine:
                     attack_paths=attack_paths
                 )
             )
-            
+        if mitre_techniques:
+            tactics = list({t["tactic"] for t in mitre_techniques})
+            incidents.append(
+                IncidentDetail(
+                    finding_type="MITRE ATT&CK Techniques Detected",
+                    description=f"Mapped {len(mitre_techniques)} MITRE techniques across tactics: {', '.join(tactics[:5])}.",
+                    metadata={"techniques": mitre_techniques}
+                )
+            )
+        if blast_radius_data and blast_radius_data.get("total_reachable_nodes", 0) > 0:
+            incidents.append(
+                IncidentDetail(
+                    finding_type="Blast Radius Assessment",
+                    description=f"Compromise could affect {blast_radius_data['total_reachable_nodes']} nodes including {blast_radius_data['resources_affected']} resources and {blast_radius_data['identities_affected']} identities.",
+                    metadata={"blast_radius": blast_radius_data}
+                )
+            )
+
         evidence = RiskEvidence(
             score=score,
             severity=severity,
-            incidents=incidents
+            incidents=incidents,
+            mitre_techniques=mitre_techniques,
+            blast_radius=blast_radius_data,
+            compliance=compliance_data,
         )
         
         # Clear existing score and findings
@@ -86,14 +153,32 @@ class RiskEngine:
         # Create legacy-compatible reasons (for backward compatibility of the string array)
         legacy_reasons = [incident.description for incident in evidence.incidents]
         
-        # Insert new Risk Findings
+        # Insert new Risk Findings with MITRE and blast radius data
+        blast_score = blast_radius_data.get("blast_score") if blast_radius_data else None
         for incident in evidence.incidents:
+            # Extract MITRE technique from incident metadata if available
+            inc_mitre_id = None
+            inc_mitre_tactic = None
+            inc_compliance = None
+            if incident.metadata:
+                techniques = incident.metadata.get("techniques", [])
+                if techniques:
+                    inc_mitre_id = techniques[0].get("technique_id")
+                    inc_mitre_tactic = techniques[0].get("tactic")
+                    # Map to compliance
+                    if inc_mitre_id:
+                        inc_compliance = self.compliance_mapper.map_techniques([inc_mitre_id])
+
             finding = RiskFinding(
                 workspace_id=identity.workspace_id,
                 identity_id=identity.id,
                 finding_type=incident.finding_type,
                 severity=evidence.severity,
-                description=incident.description
+                description=incident.description,
+                mitre_technique=inc_mitre_id,
+                mitre_tactic=inc_mitre_tactic,
+                blast_radius_score=blast_score,
+                compliance_refs=inc_compliance,
             )
             self.db.add(finding)
         
