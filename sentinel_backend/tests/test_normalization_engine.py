@@ -168,3 +168,4 @@ def test_canonical_event_db_insertion(postgres_db):
     assert retrieved.event_type == "DB Insert Test"
     assert retrieved.workspace_id == workspace_id
     assert retrieved.severity_normalized == 80
+

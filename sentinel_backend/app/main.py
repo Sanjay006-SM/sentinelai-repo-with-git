@@ -9,7 +9,9 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.graph.session import neo4j_manager
-
+import asyncio
+from app.workers.risk_worker import risk_worker
+from app.core.redis_client import close_redis_client
 # Initialize Enterprise Projections
 from app.projections.audit_projector import audit_projector
 
@@ -29,12 +31,29 @@ async def lifespan(app: FastAPI):
             "Graph features will be unavailable but the rest of the API is still running.",
             neo4j_err,
         )
+        
+    # [KNOWN DEBT - Stage 4] TEMPORARY local-dev pattern:
+    # Before cloud deployment, this must be replaced with a standalone worker
+    # process/container with proper crash recovery (heartbeat + handling for jobs 
+    # orphaned in "running" state after a restart).
+    worker_task = asyncio.create_task(risk_worker())
+    logger.info("Risk worker started.")
     yield
     # Shutdown
     try:
         neo4j_manager.close()
     except Exception:
         pass
+    
+    # Cancel worker
+    worker_task.cancel()
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        pass
+        
+    # Close Redis client
+    await close_redis_client()
 
 
 app = FastAPI(

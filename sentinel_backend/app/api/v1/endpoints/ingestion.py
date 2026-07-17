@@ -2,10 +2,13 @@ import logging
 import time
 from typing import Any, Dict, List
 
+import json
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
+
+from app.core.redis_client import get_redis_client
 
 from app.api.dependencies import get_current_workspace, get_db
 from app.core.events.bus import event_bus
@@ -44,10 +47,7 @@ global_publisher = SecurityEventPublisherFactory.create("in_memory")
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-
-def execute_ingestion_pipeline(
-    source: IngestionSource, job_id: str, workspace_id: str = None
-) -> dict:
+async def execute_ingestion_pipeline(source: IngestionSource, job_id: str, workspace_id: str = None) -> dict:
     """Background task to fetch events from the source, normalize, validate and update the job status."""
     from app.db.session import SessionLocal
     from app.graph.session import neo4j_manager
@@ -141,17 +141,25 @@ def execute_ingestion_pipeline(
                 neo4j_session = neo4j_manager.get_session()
 
                 # Sync graph incrementally
+                print(f"[{time.time()}] GRAPH_SYNC_START")
                 graph_sync = GraphSyncService(db, neo4j_session)
-                neo4j_stats = graph_sync.sync_new_events(
-                    stats["new_logs"], workspace_id=workspace_id
-                )
-
-                # Calculate risk scores incrementally
-                risk_engine = RiskEngine(db, neo4j_session)
-                findings_count = risk_engine.evaluate_new_identities(
-                    list(stats["new_identity_arns"]), workspace_id=workspace_id
-                )
-
+                neo4j_stats = graph_sync.sync_new_events(stats["new_logs"], workspace_id=workspace_id)
+                print(f"[{time.time()}] GRAPH_SYNC_END")
+                
+                # Instead of calculating synchronously, publish to Redis for background worker
+                if stats["new_identity_arns"]:
+                    print(f"[{time.time()}] REDIS_PUBLISH_START")
+                    redis = await get_redis_client()
+                    await redis.xadd(
+                        "risk_evaluation_events",
+                        {
+                            "job_id": job_id,
+                            "workspace_id": workspace_id,
+                            "new_identity_arns": json.dumps(list(stats["new_identity_arns"]))
+                        }
+                    )
+                    print(f"[{time.time()}] REDIS_PUBLISH_END")
+                findings_count = 0 # Will be populated asynchronously by the worker
         finally:
             if neo4j_session:
                 neo4j_session.close()
@@ -166,12 +174,10 @@ def execute_ingestion_pipeline(
         print(f"Relationships:\n{neo4j_stats['relationships_created']}")
         print("------------------------------------------------")
 
-        # Update job to completed
+        # Job stays running until risk worker completes it
         job = db.query(IngestionJob).filter(IngestionJob.job_id == job_id).first()
         if job:
-            job.status = "completed"
-            job.events_processed = stats.get("total_events", 0)
-            job.completed_at = func.now()
+            job.events_processed = stats.get('total_events', 0)
             db.commit()
 
         duration = time.time() - start_time
@@ -184,8 +190,7 @@ def execute_ingestion_pipeline(
         stats["neo4j_nodes_created"] = neo4j_stats["nodes_created"]
         stats["neo4j_relationships_created"] = neo4j_stats["relationships_created"]
         stats["processing_time_ms"] = int(duration * 1000)
-        stats["status"] = "completed"
-
+        stats["status"] = "running"
         return stats
 
     except ValueError as ve:
@@ -242,8 +247,8 @@ async def upload_cloudtrail_logs(
         # Initialize the file upload source
         source = FileUploadSource(content, file.filename)
 
-        # Process the file synchronously for real-time UI updates and gather stats
-        stats = execute_ingestion_pipeline(source, str(job.job_id), str(workspace.id))
+        # Process the file asynchronously to write to graph then publish to Redis
+        stats = await execute_ingestion_pipeline(source, str(job.job_id), str(workspace.id))
 
         event_bus.publish(
             AuditEvent(
@@ -260,12 +265,12 @@ async def upload_cloudtrail_logs(
                 metadata={"filename": file.filename, "stats": stats},
             )
         )
-
         return {
-            "message": "File uploaded and processed successfully.",
+            "message": "File uploaded and processed successfully. Risk evaluation is processing.",
             "job_id": str(job.job_id),
             "filename": file.filename,
-            "status": "completed",
+            "status": "processing",
+            "risk_findings_status": "processing",
             "total_events": stats.get("total_events", 0),
             "inserted": stats.get("inserted", 0),
             "duplicates": stats.get("duplicates", 0),
@@ -465,3 +470,17 @@ async def get_ingestion_config():
     from app.services.telemetry_service import TelemetryService
 
     return TelemetryService.get_pipeline_config()
+
+@router.get("/jobs/{job_id}/status")
+def get_job_status(job_id: str, db: Session = Depends(get_db)):
+    job = db.query(IngestionJob).filter(IngestionJob.job_id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    return {
+        "job_id": str(job.job_id),
+        "status": job.status,
+        "events_processed": job.events_processed,
+        "risk_findings_generated": job.risk_findings_generated,
+        "error_message": job.error_message
+    }

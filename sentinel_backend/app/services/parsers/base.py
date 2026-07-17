@@ -14,3 +14,4 @@ class BaseEventParser(ABC):
         Parses raw data into a list of CanonicalEvent schemas.
         Must handle its own error catching per record to avoid failing the whole batch.
         """
+        pass

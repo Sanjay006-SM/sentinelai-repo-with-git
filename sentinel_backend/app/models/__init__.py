@@ -10,3 +10,4 @@ from app.models.notification import Notification
 from app.models.audit_log import AuditLog
 from app.models.report import Report, ScheduledReport
 from app.models.integration import Integration
+from app.models.criticality_config import CriticalityConfig
