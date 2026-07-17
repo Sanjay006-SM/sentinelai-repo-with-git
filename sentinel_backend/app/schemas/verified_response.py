@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from app.schemas.ai_response import AIResponse
+from app.schemas.claims import Citation
 
 class VerificationResult(BaseModel):
     claim: str = Field(..., description="The specific factual claim extracted from the AI response.")
@@ -17,4 +18,6 @@ class VerifiedResponse(BaseModel):
     verifications: List[VerificationResult] = Field(default_factory=list, description="List of verification checks performed on the response.")
     is_fully_verified: bool = Field(..., description="True if all factual claims were verified successfully.")
     confidence_score: float = Field(..., description="A confidence score between 0.0 and 1.0 based on verification results.")
+    citations: List[Citation] = Field(default_factory=list, description="Structured citations mapping verified claims back to evidence sources.")
     final_response: AIResponse = Field(..., description="The final response after any hallucinated claims have been corrected or removed.")
+

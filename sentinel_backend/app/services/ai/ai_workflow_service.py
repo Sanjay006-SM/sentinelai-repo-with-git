@@ -71,6 +71,8 @@ class AIWorkflowService:
                 "attack_path_analysis": resp_dict["final_response"]["attack_path_analysis"],
                 "findings": resp_dict["final_response"]["findings"],
                 "recommendations": resp_dict["final_response"]["recommendations"],
+                "confidence_score": resp_dict["confidence_score"],
+                "citations": resp_dict.get("citations", []),
                 "verified_response": resp_dict  # Include full enterprise payload
             }
             

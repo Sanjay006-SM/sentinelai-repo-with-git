@@ -352,6 +352,7 @@ def build_verified_response(state: WorkflowState) -> WorkflowState:
             verifications=state.verification_results,
             is_fully_verified=is_fully_verified,
             confidence_score=state.confidence_score,
+            citations=state.citations,
             final_response=final_response
         )
         
