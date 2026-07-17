@@ -48,6 +48,6 @@ class GraphReasoner:
                 metrics["cycle_detected"] = res_cycles[0].get("has_cycle", False)
 
         except Exception as e:
-            logger.warning(f"Graph reasoning partial failure (timeout or error): {str(e)}")
+            logger.warning("Graph reasoning partial failure (timeout or error): %s", str(e))
 
         return metrics

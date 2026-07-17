@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str = "12Asdf*#_"
     NEO4J_DATABASE: str = "neo4j"
 
+    # Redis config
+    REDIS_URL: str = os.getenv("REDIS_URL") or "redis://localhost:6379"
+
     # Gemini config
     GEMINI_API_KEY: str = ""
 
@@ -46,6 +49,12 @@ class Settings(BaseSettings):
     # No hard default — must be set in production. App will log a critical warning if missing.
     SECRET_KEY: str = ""
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
+    # Stage 1 limits and defaults
+    MAX_RESULTS_PER_POLL: int = 1000
+    MAX_BYTES_PER_POLL: int = 10485760  # 10MB
+    DEDUP_WINDOW_SECONDS: int = 3600
+    PUBLISHER_MAX_SIZE: int = 10000
 
     # Feature Flags
     ENABLE_GRAPH_EVIDENCE_ENGINE: bool = False
@@ -87,6 +96,7 @@ logger.info(
     settings.NEO4J_PASSWORD[:4] if settings.NEO4J_PASSWORD else "N/A",
 )
 logger.info("NEO4J_DATABASE = %s", settings.NEO4J_DATABASE)
+logger.info("REDIS_URL = %s", settings.REDIS_URL)
 logger.info("GOOGLE_CLIENT_ID set = %s", bool(settings.GOOGLE_CLIENT_ID))
 logger.info("SECRET_KEY set = %s", bool(settings.SECRET_KEY))
 logger.info("FRONTEND_URL = %s", settings.FRONTEND_URL or "(not set)")
