@@ -16,4 +16,7 @@ boto3
 reportlab
 google-auth
 requests
+pytest
+pytest-asyncio
+testcontainers[postgres]
 redis>=5.0.0

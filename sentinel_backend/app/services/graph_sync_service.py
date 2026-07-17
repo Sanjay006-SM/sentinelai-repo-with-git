@@ -132,7 +132,7 @@ class GraphSyncService:
             )
             relationships_created += 1 # PART_OF
 
-        logger.info(f"Neo4j sync complete. Nodes affected: {nodes_created}, Relationships affected: {relationships_created}")
+        logger.info("Neo4j sync complete. Nodes affected: {nodes_created}, Relationships affected: %s", relationships_created)
         
         workspace = self.db.query(Workspace).filter(Workspace.id == workspace_id).first()
         org_id = str(workspace.organization_id) if workspace else "SYSTEM"

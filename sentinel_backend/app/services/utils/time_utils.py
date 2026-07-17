@@ -15,7 +15,7 @@ def normalize_timestamp_utc(time_str: str) -> datetime:
         elif isinstance(time_str, datetime):
             return time_str
     except ValueError as e:
-        logger.warning(f"Invalid timestamp format: {time_str}")
+        logger.warning("Invalid timestamp format: %s", time_str)
         raise ValueError(f"Invalid timestamp format: {time_str}") from e
     
     raise TypeError(f"Expected string or datetime, got {type(time_str)}")
