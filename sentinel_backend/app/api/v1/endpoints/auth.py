@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.dependencies import get_db, get_current_active_user
+from app.core.limiter import limiter
 from app.core.config import settings
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
 from app.core.redis_client import get_redis_client

@@ -112,6 +112,61 @@ class ApiClient {
     window.URL.revokeObjectURL(url);
     a.remove();
   }
+
+  async postDownload(endpoint: string, body: any, filename: string) {
+    console.log(`[API POST DOWNLOAD Request]: ${BASE_URL}${endpoint}`);
+    const workspaceId = useGlobalStore.getState().currentWorkspaceId;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    if (typeof window !== 'undefined') {
+      const tokenStr = localStorage.getItem('auth-storage');
+      if (tokenStr) {
+        try {
+          const tokenData = JSON.parse(tokenStr);
+          if (tokenData.state && tokenData.state.token) {
+            headers['Authorization'] = `Bearer ${tokenData.state.token}`;
+          }
+        } catch (e) { }
+      }
+    }
+
+    if (workspaceId) {
+      headers['X-Workspace-ID'] = workspaceId;
+    }
+
+    try {
+      const res = await fetch(`${BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+      console.log(`[API POST DOWNLOAD Response Status]: ${res.status} ${res.statusText}`);
+      if (!res.ok) {
+        let errorMsg = `API POST DOWNLOAD error: ${res.statusText}`;
+        try {
+          const text = await res.text();
+          const errorData = JSON.parse(text);
+          if (errorData.detail) {
+            errorMsg = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+          }
+        } catch (e) { }
+        throw new Error(errorMsg);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (e) {
+      console.error(`[API POST DOWNLOAD Fetch Error]:`, e);
+      throw e;
+    }
+  }
 }
 
 const api = new ApiClient();

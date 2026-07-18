@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     NEO4J_DATABASE: str = "neo4j"
 
     # Redis config
-    REDIS_URL: str = os.getenv("REDIS_URL") or "redis://localhost:6379"
+    REDIS_URL: str = "redis://localhost:6379"
 
     # Gemini config
     GEMINI_API_KEY: str = ""
