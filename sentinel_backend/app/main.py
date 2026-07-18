@@ -67,9 +67,35 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 
+_ALLOWED_ORIGINS = [
+    "https://ai-nexus-2eas.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "https://sentinel14.netlify.app",
+]
+
+if settings.FRONTEND_URL:
+    _extra = settings.FRONTEND_URL.rstrip("/")
+    if _extra not in _ALLOWED_ORIGINS:
+        _ALLOWED_ORIGINS.append(_extra)
+        logger.info("CORS: added FRONTEND_URL origin → %s", _extra)
+
+logger.info("CORS allowed origins: %s", _ALLOWED_ORIGINS)
+
+def _add_cors_headers(request: Request, response: JSONResponse) -> JSONResponse:
+    origin = request.headers.get("origin")
+    if origin in _ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+    return response
+
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
-    return JSONResponse(
+    response = JSONResponse(
         status_code=exc.status_code,
         content={
             "error": {
@@ -79,10 +105,11 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
             }
         },
     )
+    return _add_cors_headers(request, response)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    return JSONResponse(
+    response = JSONResponse(
         status_code=422,
         content={
             "error": {
@@ -92,11 +119,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             }
         },
     )
+    return _add_cors_headers(request, response)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled Exception: {exc}", exc_info=True)
-    return JSONResponse(
+    response = JSONResponse(
         status_code=500,
         content={
             "error": {
@@ -106,6 +134,7 @@ async def global_exception_handler(request: Request, exc: Exception):
             }
         },
     )
+    return _add_cors_headers(request, response)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CORS — Must be added BEFORE any other middleware and BEFORE include_router.
@@ -122,21 +151,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 #   4. Never use allow_origins=["*"] when allow_credentials=True — that is
 #      an invalid combination per the CORS spec. Always use explicit origins.
 # ─────────────────────────────────────────────────────────────────────────────
-_ALLOWED_ORIGINS = [
-    "https://ai-nexus-2eas.vercel.app",
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://sentinel14.netlify.app",
-]
-
-# Support an optional extra origin from environment (e.g. staging deployments)
-if settings.FRONTEND_URL:
-    _extra = settings.FRONTEND_URL.rstrip("/")
-    if _extra not in _ALLOWED_ORIGINS:
-        _ALLOWED_ORIGINS.append(_extra)
-        logger.info("CORS: added FRONTEND_URL origin → %s", _extra)
-
-logger.info("CORS allowed origins: %s", _ALLOWED_ORIGINS)
+# Routers are included AFTER middleware so CORS wraps all routes
 
 app.add_middleware(
     CORSMiddleware,
@@ -154,11 +169,7 @@ async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExc
         status_code=429,
         content={"detail": "Too many requests, please try again later."}
     )
-    origin = request.headers.get("origin")
-    if origin in _ALLOWED_ORIGINS:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response
+    return _add_cors_headers(request, response)
 
 app.add_middleware(SlowAPIMiddleware)
 
