@@ -21,3 +21,4 @@ pytest-asyncio
 testcontainers[postgres]
 redis>=5.0.0
 slowapi  # Rate limiting
+langgraph==1.2.9
