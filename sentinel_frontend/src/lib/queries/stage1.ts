@@ -3,12 +3,13 @@ import { IntegrationResponse, PipelineConfig, MonitoringMetrics, LiveEvent } fro
 
 // TODO: replace with real Stage 1 implementation from teammate.
 
+import api from '../api';
+
 export const useIntegrations = () => {
   return useQuery({
     queryKey: ['integrations'],
     queryFn: async (): Promise<IntegrationResponse[]> => {
-      // Return empty/mock data for now
-      return [];
+      return await api.get('/integrations');
     }
   });
 };
@@ -16,8 +17,11 @@ export const useIntegrations = () => {
 export const useConfigureIntegration = () => {
   return useMutation({
     mutationFn: async (req: { provider: string; config: Record<string, any> }): Promise<void> => {
-      // Mock mutation
-      return Promise.resolve();
+      if (req.provider === 'aws') {
+        return await api.post('/integrations/aws', req.config);
+      } else {
+        return await api.post(`/integrations/${req.provider}/configure`, req.config);
+      }
     }
   });
 };
