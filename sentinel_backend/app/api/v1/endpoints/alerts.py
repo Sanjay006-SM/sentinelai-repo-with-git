@@ -1,6 +1,6 @@
 import logging
 from typing import Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
@@ -22,7 +22,7 @@ async def receive_simulated_alert(alert: SimulatedAlert):
     Stage 1 Simulation Endpoint.
     Receives an alert, stores it in memory, and correlates it with recent alerts.
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     
     # Store the alert
     new_alert = {
