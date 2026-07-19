@@ -1,4 +1,5 @@
 import logging
+import re
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -85,9 +86,12 @@ if settings.FRONTEND_URL:
 
 logger.info("CORS allowed origins: %s", _ALLOWED_ORIGINS)
 
+_ALLOWED_ORIGIN_REGEX_STRING = r"^https://sentinelai-repo-with-git(?:-[a-zA-Z0-9]+)*\.vercel\.app$"
+_ALLOWED_ORIGIN_REGEX = re.compile(_ALLOWED_ORIGIN_REGEX_STRING)
+
 def _add_cors_headers(request: Request, response: JSONResponse) -> JSONResponse:
     origin = request.headers.get("origin")
-    if origin in _ALLOWED_ORIGINS:
+    if origin and (origin in _ALLOWED_ORIGINS or _ALLOWED_ORIGIN_REGEX.match(origin)):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Headers"] = "*"
@@ -156,6 +160,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
+    allow_origin_regex=_ALLOWED_ORIGIN_REGEX_STRING,
     allow_credentials=True,
     allow_methods=["*"],   # Covers GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD
     allow_headers=["*"],   # Covers Authorization, Content-Type, x-workspace-id, etc.
