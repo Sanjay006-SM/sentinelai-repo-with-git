@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, ingestion, identities, ai, dashboard, auth, organizations, integrations, analytics, notifications, audit_logs, reports, findings, mitre
+from app.api.v1.endpoints import health, ingestion, identities, ai, dashboard, auth, organizations, integrations, analytics, notifications, audit_logs, reports, findings, mitre, alerts
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
@@ -16,3 +16,4 @@ api_router.include_router(audit_logs.router, prefix="/audit-logs", tags=["Audit 
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 api_router.include_router(findings.router, prefix="/findings", tags=["Findings"])
 api_router.include_router(mitre.router, prefix="/mitre", tags=["MITRE ATT&CK & Compliance"])
+api_router.include_router(alerts.router, prefix="/alerts", tags=["Alerts Simulation (Stage 1)"])
