@@ -73,6 +73,7 @@ _ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
     "https://sentinel14.netlify.app",
+    "https://sentinelai-repo-with-git-wxvp.vercel.app",
 ]
 
 if settings.FRONTEND_URL:
