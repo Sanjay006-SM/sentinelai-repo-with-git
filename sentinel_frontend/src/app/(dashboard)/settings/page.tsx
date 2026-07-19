@@ -49,11 +49,11 @@ export default function SettingsPage() {
 
   return (
     <div className="animate-in fade-in duration-500 pb-12 flex flex-col md:flex-row gap-8">
-      
+
       {/* Left Navigation */}
       <div className="w-full md:w-64 shrink-0 flex flex-col gap-2">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-4">Settings</h1>
-        
+
         <div className="flex flex-col gap-1">
           {[
             { id: "org", name: "Organization", icon: <Building2 className="w-4 h-4" />, disabled: false },
@@ -67,11 +67,10 @@ export default function SettingsPage() {
               key={tab.id}
               disabled={tab.disabled}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all relative ${
-                activeTab === tab.id 
-                  ? "bg-indigo-50 text-indigo-700 border-indigo-100" 
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all relative ${activeTab === tab.id
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-100"
                   : "text-slate-500 border border-transparent hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:hover:bg-transparent"
-              }`}
+                }`}
             >
               {tab.icon}
               {tab.name}
@@ -87,7 +86,7 @@ export default function SettingsPage() {
 
       {/* Right Content Panel */}
       <div className="flex-1 bg-white border border-slate-200 rounded-xl shadow-sm p-6 min-h-[500px]">
-        
+
         {/* ORGANIZATION */}
         {activeTab === "org" && (
           <div className="flex flex-col gap-6">
@@ -95,12 +94,12 @@ export default function SettingsPage() {
               <h2 className="text-lg font-bold text-slate-900">Organization Settings</h2>
               <p className="text-xs text-slate-500 mt-1">Configure company profiles and identity boundaries.</p>
             </div>
-            
+
             <div className="flex flex-col gap-4 max-w-md">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-slate-700">Organization Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   className="input-field h-10 text-sm"
@@ -126,12 +125,12 @@ export default function SettingsPage() {
               <h2 className="text-lg font-bold text-slate-900">Workspace Directory</h2>
               <p className="text-xs text-slate-500 mt-1">Isolate settings, dashboards, and role alerts.</p>
             </div>
-            
+
             <div className="flex flex-col gap-4 max-w-md">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-slate-700">Workspace Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={workspaceName}
                   onChange={(e) => setWorkspaceName(e.target.value)}
                   className="input-field h-10 text-sm"
@@ -157,11 +156,11 @@ export default function SettingsPage() {
               <h2 className="text-lg font-bold text-slate-900">Global Preferences</h2>
               <p className="text-xs text-slate-500 mt-1">Configure timezone and scoring variables.</p>
             </div>
-            
+
             <div className="flex flex-col gap-4 max-w-md">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-slate-700">Preferred Timezone</label>
-                <select 
+                <select
                   value={timezone}
                   onChange={(e) => setTimezone(e.target.value)}
                   className="input-field h-10 text-sm"

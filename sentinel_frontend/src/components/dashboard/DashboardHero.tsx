@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
+import {
   Play,
   GitBranch,
   Download,
@@ -23,22 +23,22 @@ import { useUploadCloudTrail } from "@/lib/queries";
 
 export default function DashboardHero() {
   const router = useRouter();
-  
+
   // Modal States
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  
+
   // Upload State: idle, selected, uploading, success
-  const [uploadState, setUploadState] = useState<'idle'|'selected'|'uploading'|'success'>('idle');
+  const [uploadState, setUploadState] = useState<'idle' | 'selected' | 'uploading' | 'success'>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const { mutateAsync: uploadFile } = useUploadCloudTrail();
-  
+
   // Export State
   const [exportType, setExportType] = useState("executive");
   const [exportFormat, setExportFormat] = useState("pdf");
   const [exportRange, setExportRange] = useState("7d");
-  const [exportState, setExportState] = useState<'idle'|'generating'>('idle');
+  const [exportState, setExportState] = useState<'idle' | 'generating'>('idle');
   const [showToast, setShowToast] = useState(false);
 
   const containerVariants = {
@@ -65,7 +65,7 @@ export default function DashboardHero() {
     e.preventDefault();
     setIsDragging(true);
   };
-  
+
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -84,7 +84,7 @@ export default function DashboardHero() {
       }, 3000);
     } catch (err) {
       console.error(err);
-      setUploadState('idle'); 
+      setUploadState('idle');
     }
   };
 
@@ -93,7 +93,7 @@ export default function DashboardHero() {
     setExportState('generating');
     setTimeout(() => {
       // TODO: Connect to backend export API
-      
+
       setExportState('idle');
       setIsExportModalOpen(false);
       setShowToast(true);
@@ -103,7 +103,7 @@ export default function DashboardHero() {
 
   return (
     <>
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -114,7 +114,7 @@ export default function DashboardHero() {
 
         {/* Top Gradient Line */}
         <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[#D3F531] to-transparent opacity-50"></div>
-        
+
         <div className="flex flex-col lg:flex-row p-6 lg:p-8 gap-8 relative z-10">
           {/* LEFT SIDE */}
           <div className="flex-1 flex flex-col justify-center">
@@ -123,21 +123,21 @@ export default function DashboardHero() {
                 Command Center for Machine Identities
               </h1>
             </motion.div>
-            
+
             <motion.p variants={itemVariants} className="hero-subtext text-text-muted text-base max-w-2xl mt-3 mb-8">
               Monitor cloud identities, detect attack paths, calculate risk, and investigate threats using AI.
             </motion.p>
-            
+
             {/* CTA Buttons */}
             <motion.div variants={itemVariants} className="flex flex-wrap gap-4 mb-8">
-              <button 
+              <button
                 onClick={() => router.push('/risk-findings')}
                 className="btn btn-primary h-11 px-6 flex items-center gap-2 light-btn-investigate"
               >
                 <Search className="w-4 h-4" />
                 Start Investigation
               </button>
-              <button 
+              <button
                 onClick={() => router.push('/ai-investigation')}
                 className="btn h-11 px-6 flex items-center gap-2 transition-colors bg-glass-subtle border border-glass-active text-text-primary hover:bg-white/10 hover:border-[#D3F531]/50 light-btn-ask-ai"
               >
@@ -158,40 +158,40 @@ export default function DashboardHero() {
           {/* RIGHT SIDE: Quick Actions */}
           <motion.div variants={itemVariants} className="lg:w-72 shrink-0 flex flex-col gap-3">
             <h3 className="quick-actions-label text-xs font-bold text-text-muted uppercase tracking-wider mb-1">Quick Actions</h3>
-            
-            <motion.button 
-              whileHover={{ scale: 1.02 }} 
-              whileTap={{ scale: 0.98 }} 
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => { setUploadState('idle'); setIsUploadModalOpen(true); }}
               className="btn bg-glass-subtle border border-glass-subtle hover:border-[#6366f1]/50 w-full justify-start gap-3 h-11 px-4 text-text-primary transition-all light-btn-quick"
             >
               <UploadCloud className="w-4 h-4 text-[#06b6d4]" />
               Upload CloudTrail
             </motion.button>
-            
-            <motion.button 
-              whileHover={{ scale: 1.02 }} 
-              whileTap={{ scale: 0.98 }} 
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/ai-investigation?prompt=run_full_investigation')}
               className="btn bg-glass-subtle border border-glass-subtle hover:border-[#6366f1]/50 w-full justify-start gap-3 h-11 px-4 text-text-primary transition-all light-btn-quick"
             >
               <Play className="w-4 h-4 text-[#6366f1]" />
               Run SentinelAI Copilot
             </motion.button>
-            
-            <motion.button 
-              whileHover={{ scale: 1.02 }} 
-              whileTap={{ scale: 0.98 }} 
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/attack-graph')}
               className="btn bg-glass-subtle border border-glass-subtle hover:border-[#6366f1]/50 w-full justify-start gap-3 h-11 px-4 text-text-primary transition-all light-btn-quick"
             >
               <GitBranch className="w-4 h-4 text-[#f97316]" />
               Open Investigations
             </motion.button>
-            
-            <motion.button 
-              whileHover={{ scale: 1.02 }} 
-              whileTap={{ scale: 0.98 }} 
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => { setExportState('idle'); setIsExportModalOpen(true); }}
               className="btn bg-glass-subtle border border-glass-subtle hover:border-[#6366f1]/50 w-full justify-start gap-3 h-11 px-4 text-text-primary transition-all light-btn-quick"
             >
@@ -206,11 +206,11 @@ export default function DashboardHero() {
       <AnimatePresence>
         {isUploadModalOpen && (
           <div key="upload-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div 
-              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" 
+            <div
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
               onClick={() => setIsUploadModalOpen(false)}
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -222,7 +222,7 @@ export default function DashboardHero() {
                   <h2 className="text-lg font-bold text-text-primary">Upload CloudTrail Logs</h2>
                   <p className="text-xs text-text-muted mt-1">Upload a JSON CloudTrail export to ingest events and run risk analysis</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsUploadModalOpen(false)}
                   className="p-1.5 text-text-muted hover:text-white hover:bg-white/10 rounded-md transition-colors"
                 >
@@ -232,13 +232,12 @@ export default function DashboardHero() {
 
               <div className="p-6">
                 {uploadState === 'idle' && (
-                  <label 
+                  <label
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
-                    className={`border-2 border-dashed transition-colors rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer text-center ${
-                      isDragging ? 'border-[#6366f1] bg-glass-subtle shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'border-[#6366f1]/50 bg-glass-subtle hover:bg-slate-100/50'
-                    }`}
+                    className={`border-2 border-dashed transition-colors rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer text-center ${isDragging ? 'border-[#6366f1] bg-glass-subtle shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'border-[#6366f1]/50 bg-glass-subtle hover:bg-slate-100/50'
+                      }`}
                   >
                     <UploadCloud className="w-10 h-10 text-[#6366f1] mb-4" />
                     <p className="text-sm font-bold text-text-primary mb-1">Drag & drop your CloudTrail JSON file here</p>
@@ -246,9 +245,9 @@ export default function DashboardHero() {
                     <div className="px-4 py-2 bg-transparent border border-[#6366f1] text-[#6366f1] hover:bg-[#6366f1]/10 rounded-lg text-sm font-semibold transition-colors">
                       Browse Files
                     </div>
-                    <input 
-                      type="file" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      className="hidden"
                       accept=".json,.json.gz"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
@@ -272,7 +271,7 @@ export default function DashboardHero() {
                         </div>
                         {uploadState === 'uploading' && (
                           <div className="w-full h-1.5 bg-glass-subtle rounded-full overflow-hidden mt-2 relative">
-                            <motion.div 
+                            <motion.div
                               initial={{ width: "0%" }}
                               animate={{ width: "95%" }}
                               transition={{ duration: 15, ease: "easeOut" }}
@@ -283,7 +282,7 @@ export default function DashboardHero() {
                         {uploadState === 'uploading' && <p className="text-xs text-[#6366f1] mt-2 animate-pulse font-medium">Uploading & Analyzing...</p>}
                       </div>
                       {uploadState === 'selected' && (
-                        <button 
+                        <button
                           onClick={() => {
                             setSelectedFile(null);
                             setUploadState('idle');
@@ -309,14 +308,14 @@ export default function DashboardHero() {
               </div>
 
               <div className="flex items-center justify-end gap-3 p-5 border-t border-glass-subtle border bg-glass-subtle">
-                <button 
+                <button
                   onClick={() => setIsUploadModalOpen(false)}
                   className="px-4 py-2 text-sm font-semibold text-text-muted hover:text-white transition-colors"
                 >
                   {uploadState === 'success' ? 'Close' : 'Cancel'}
                 </button>
                 {uploadState !== 'success' && (
-                  <button 
+                  <button
                     onClick={handleStartIngestion}
                     disabled={uploadState === 'idle' || uploadState === 'uploading'}
                     className="px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-sm font-semibold rounded-lg shadow-[0_0_20px_rgba(211,245,49,0.3)] transition-all"
@@ -331,11 +330,11 @@ export default function DashboardHero() {
 
         {isExportModalOpen && (
           <div key="export-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div 
-              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" 
+            <div
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
               onClick={() => exportState === 'idle' && setIsExportModalOpen(false)}
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -347,7 +346,7 @@ export default function DashboardHero() {
                   <h2 className="text-lg font-bold text-text-primary">Export Security Report</h2>
                   <p className="text-xs text-text-muted mt-1">Choose format and content for your export</p>
                 </div>
-                <button 
+                <button
                   onClick={() => exportState === 'idle' && setIsExportModalOpen(false)}
                   className="p-1.5 text-text-muted hover:text-white hover:bg-white/10 rounded-md transition-colors"
                 >
@@ -356,7 +355,7 @@ export default function DashboardHero() {
               </div>
 
               <div className="p-6 flex flex-col gap-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                
+
                 {/* REPORT TYPE */}
                 <div className="flex flex-col gap-3">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Report Type</label>
@@ -367,8 +366,8 @@ export default function DashboardHero() {
                       { id: 'cloudtrail', name: 'CloudTrail Audit', desc: 'Raw event log for compliance review', icon: <Activity className="w-4 h-4" /> },
                       { id: 'attack', name: 'Attack Path Report', desc: 'Complete graph with blast radius', icon: <Map className="w-4 h-4" /> },
                     ].map(t => (
-                      <div 
-                        key={t.id} 
+                      <div
+                        key={t.id}
                         onClick={() => setExportType(t.id)}
                         className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${exportType === t.id ? 'bg-glass-subtle border-[#6366f1]' : 'border-glass-subtle border hover:border-glass-active hover:bg-slate-100/50'}`}
                       >
@@ -392,7 +391,7 @@ export default function DashboardHero() {
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Format</label>
                   <div className="flex bg-glass-subtle p-1 border border-glass-subtle rounded-lg">
                     {['pdf', 'csv', 'json'].map(f => (
-                      <button 
+                      <button
                         key={f}
                         onClick={() => setExportFormat(f)}
                         className={`flex-1 py-2 text-sm font-medium uppercase rounded-md transition-colors ${exportFormat === f ? 'bg-[#D3F531] text-black font-bold shadow-sm' : 'text-text-muted hover:text-white'}`}
@@ -408,7 +407,7 @@ export default function DashboardHero() {
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Date Range</label>
                   <div className="flex flex-wrap gap-2">
                     {['Last 7 days', 'Last 30 days', 'Last 90 days', 'Custom'].map(r => (
-                      <button 
+                      <button
                         key={r}
                         onClick={() => setExportRange(r)}
                         className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${exportRange === r ? 'bg-[#6366f1]/10 border-[#6366f1] text-[#818cf8]' : 'bg-glass-subtle border-glass-subtle border text-text-muted hover:text-white'}`}
@@ -437,14 +436,14 @@ export default function DashboardHero() {
               </div>
 
               <div className="flex items-center justify-end gap-3 p-5 border-t border-glass-subtle border bg-glass-subtle">
-                <button 
+                <button
                   onClick={() => exportState === 'idle' && setIsExportModalOpen(false)}
                   disabled={exportState === 'generating'}
                   className="px-4 py-2 text-sm font-semibold text-text-muted hover:text-white disabled:opacity-50 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleGenerateExport}
                   disabled={exportState === 'generating'}
                   className="px-4 py-2 bg-[#D3F531] hover:bg-[#bde026] text-black text-sm font-bold rounded-lg shadow-[0_0_20px_rgba(211,245,49,0.3)] transition-all flex items-center gap-2 min-w-[170px] justify-center disabled:opacity-80"
@@ -464,7 +463,7 @@ export default function DashboardHero() {
       {/* Global Toast */}
       <AnimatePresence>
         {showToast && (
-          <motion.div 
+          <motion.div
             key="toast"
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
