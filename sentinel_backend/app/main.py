@@ -75,6 +75,7 @@ _ALLOWED_ORIGINS = [
     "http://127.0.0.1:3001",
     "https://sentinel14.netlify.app",
     "https://sentinelai-repo-with-git-wxvp.vercel.app",
+    "https://sentinelai-repo-with-git-gld6-five.vercel.app",
 ]
 
 if settings.FRONTEND_URL:
@@ -155,7 +156,6 @@ async def global_exception_handler(request: Request, exc: Exception):
 #   4. Never use allow_origins=["*"] when allow_credentials=True — that is
 #      an invalid combination per the CORS spec. Always use explicit origins.
 # ─────────────────────────────────────────────────────────────────────────────
-# Routers are included AFTER middleware so CORS wraps all routes
 
 app.add_middleware(
     CORSMiddleware,
