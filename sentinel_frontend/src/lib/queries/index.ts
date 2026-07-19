@@ -222,3 +222,42 @@ export const useExportReport = () => {
     }
   });
 };
+
+// ── AI Conversations ──────────────────────────────────────────────────
+
+export const useAiConversations = (identityId?: string) => {
+  return useQuery({
+    queryKey: ['aiConversations', identityId],
+    queryFn: async (): Promise<any[]> => {
+      let url = '/ai-conversations';
+      if (identityId) url += `?identity_id=${identityId}`;
+      return await api.get(url);
+    }
+  });
+};
+
+export const useCreateAiConversation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (req: { title?: string; identity_id?: string; message?: any }): Promise<any> => {
+      return await api.post('/ai-conversations/', req);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aiConversations'] });
+    }
+  });
+};
+
+export const useUpdateAiConversation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (req: { id: string; title?: string; message?: any }): Promise<any> => {
+      const { id, ...body } = req;
+      return await api.put(`/ai-conversations/${id}`, body);
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['aiConversations'] });
+    }
+  });
+};
+

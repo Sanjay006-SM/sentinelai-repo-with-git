@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Plus, BrainCircuit, Sparkles, Send, ShieldCheck, ArrowRight, Loader2, Clock, Trash2 } from "lucide-react";
-import { useAiInvestigate } from "@/lib/queries";
+import { useAiInvestigate, useAiConversations, useCreateAiConversation, useUpdateAiConversation } from "@/lib/queries";
 import { motion, AnimatePresence } from "framer-motion";
 
 const QUICK_PROMPTS = [
@@ -13,23 +13,42 @@ const QUICK_PROMPTS = [
 ];
 
 interface ChatSession {
-  id: number;
+  id: string;
   title: string;
-  time: string;
   messages: {role: 'user' | 'ai', content: string}[];
+  created_at: string;
 }
 
 export default function AIInvestigationPage() {
   const { mutateAsync: runAiInvestigate, isPending } = useAiInvestigate();
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([
-    { id: 1, title: "New Investigation", time: "just now", messages: [] }
-  ]);
-  const [activeChatId, setActiveChatId] = useState<number | null>(1);
+  
+  // Backend Hooks
+  const { data: serverConversations, refetch: refetchConversations } = useAiConversations();
+  const { mutateAsync: createConversation } = useCreateAiConversation();
+  const { mutateAsync: updateConversation } = useUpdateAiConversation();
+
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  
   const [inputValue, setInputValue] = useState("");
   const [dynamicMessages, setDynamicMessages] = useState<{role: 'user' | 'ai', content: string}[]>([]);
   const [streamingText, setStreamingText] = useState<string>("");
   const [isStreaming, setIsStreaming] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Sync server conversations
+  useEffect(() => {
+    if (serverConversations) {
+      setChatSessions(serverConversations);
+      // If we don't have an active chat, select the newest or start fresh
+      if (!activeChatId && serverConversations.length > 0) {
+        setActiveChatId(serverConversations[0].id);
+        setDynamicMessages(serverConversations[0].messages || []);
+      } else if (!activeChatId) {
+        setDynamicMessages([]);
+      }
+    }
+  }, [serverConversations]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -60,11 +79,37 @@ export default function AIInvestigationPage() {
     const userMsg = customUserMsg || `Run a security investigation on identity profile ID: ${identityId}`;
     setDynamicMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     
+    // Determine active conversation or create one
+    let currentChatId = activeChatId;
+    const title = userMsg.length > 40 ? userMsg.slice(0, 40) + '...' : userMsg;
+
+    if (!currentChatId || currentChatId === 'new') {
+      try {
+        const newConv = await createConversation({
+          title,
+          identity_id: identityId,
+          message: { role: 'user', content: userMsg }
+        });
+        currentChatId = newConv.id;
+        setActiveChatId(newConv.id);
+      } catch (e) {
+        console.error("Failed to create conversation", e);
+      }
+    } else {
+      try {
+        await updateConversation({
+          id: currentChatId,
+          message: { role: 'user', content: userMsg }
+        });
+      } catch (e) {
+        console.error("Failed to append message", e);
+      }
+    }
+    
     try {
       const report = await runAiInvestigate({ identity_id: identityId });
       
       if (report.success === false) {
-        // Handle sanitized enterprise errors without crashing
         const friendlyMessage = `Sorry, I'm unable to answer this investigation right now.\n\nThe AI service is temporarily unavailable.\n\nPlease try again later.`;
         streamResponse(friendlyMessage);
         return;
@@ -84,11 +129,18 @@ export default function AIInvestigationPage() {
 
       const aiResponseText = `### Executive Summary\n${report.executive_summary || "No summary available."}\n\n### Risk Assessment\n${report.risk_assessment || ""}\n\n### Attack Path Analysis\n${report.attack_path_analysis || ""}\n\n### Findings\n${findingsList || "No findings."}\n\n### Recommendations\n${recList || "No recommendations."}${confidenceNote}`.trim();
 
-      // Save to chat session
-      const title = userMsg.length > 40 ? userMsg.slice(0, 40) + '...' : userMsg;
-      setChatSessions(prev => prev.map(s =>
-        s.id === activeChatId ? { ...s, title, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) } : s
-      ));
+      // Save AI response to backend
+      if (currentChatId && currentChatId !== 'new') {
+        try {
+          await updateConversation({
+            id: currentChatId,
+            message: { role: 'ai', content: aiResponseText }
+          });
+          refetchConversations();
+        } catch (e) {
+          console.error("Failed to save AI response", e);
+        }
+      }
 
       // Stream the response
       streamResponse(aiResponseText);
@@ -103,7 +155,7 @@ export default function AIInvestigationPage() {
     if (!inputValue.trim()) return;
     
     if (activeChatId === null) {
-      setActiveChatId(Date.now());
+      setActiveChatId('new');
     }
 
     // Check if the query contains a UUID or ARN
@@ -141,7 +193,7 @@ export default function AIInvestigationPage() {
       const params = new URLSearchParams(window.location.search);
       const identityId = params.get('identityId');
       if (identityId) {
-        setActiveChatId(999);
+        setActiveChatId('new');
         triggerInvestigation(identityId);
         // Clean URL query
         window.history.replaceState({}, '', '/ai-investigation');
@@ -150,18 +202,7 @@ export default function AIInvestigationPage() {
   }, []);
 
   const handleNewChat = () => {
-    // Save current messages before switching
-    if (activeChatId !== null) {
-      setChatSessions(prev => prev.map(s =>
-        s.id === activeChatId ? { ...s, messages: dynamicMessages } : s
-      ));
-    }
-    const newId = Date.now();
-    setChatSessions(prev => [
-      { id: newId, title: "New Investigation", time: "just now", messages: [] },
-      ...prev,
-    ]);
-    setActiveChatId(newId);
+    setActiveChatId('new');
     setDynamicMessages([]);
     setStreamingText("");
   };
@@ -188,14 +229,8 @@ export default function AIInvestigationPage() {
               <button
                 key={chat.id}
                 onClick={() => {
-                  // Save current messages before switching
-                  if (activeChatId !== null) {
-                    setChatSessions(prev => prev.map(s =>
-                      s.id === activeChatId ? { ...s, messages: dynamicMessages } : s
-                    ));
-                  }
                   setActiveChatId(chat.id);
-                  setDynamicMessages(chat.messages);
+                  setDynamicMessages(chat.messages || []);
                   setStreamingText("");
                 }}
                 className={`w-full text-left p-3 flex flex-col gap-1 rounded-lg transition-colors border-l-2 mb-1 ${
@@ -209,7 +244,7 @@ export default function AIInvestigationPage() {
                 </span>
                 <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  {chat.time}
+                  {chat.created_at ? new Date(chat.created_at).toLocaleDateString() : 'recently'}
                 </span>
               </button>
             ))}
@@ -256,7 +291,7 @@ export default function AIInvestigationPage() {
                       key={i}
                       onClick={async () => {
                         setInputValue("");
-                        if (activeChatId === null) setActiveChatId(Date.now());
+                        setActiveChatId('new');
                         // Auto-submit the quick prompt directly
                         let identityId = "";
                         try {

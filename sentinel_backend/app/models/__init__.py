@@ -12,3 +12,4 @@ from app.models.report import Report, ScheduledReport
 from app.models.integration import Integration
 from app.models.criticality_config import CriticalityConfig
 from app.models.incident import Incident
+from app.models.ai_conversation import AIConversation
