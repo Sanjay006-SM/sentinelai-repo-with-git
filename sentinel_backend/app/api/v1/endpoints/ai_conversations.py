@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from app.api.dependencies import get_db, get_current_active_user
-from app.models.tenant import User
+from app.api.dependencies import get_db, get_current_active_user, get_current_workspace
+from app.models.tenant import User, Workspace
 from app.models.ai_conversation import AIConversation
 from app.schemas.ai_conversation import AIConversationCreate, AIConversationUpdate, AIConversationResponse
 
@@ -12,13 +12,14 @@ router = APIRouter()
 def get_conversations(
     identity_id: str = None,
     db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
     current_user: User = Depends(get_current_active_user)
 ):
     """
     Get all AI conversations for the current workspace.
     Optionally filter by identity_id.
     """
-    query = db.query(AIConversation).filter(AIConversation.workspace_id == current_user.workspace_id)
+    query = db.query(AIConversation).filter(AIConversation.workspace_id == workspace.id)
     if identity_id:
         query = query.filter(AIConversation.identity_id == identity_id)
     
@@ -28,6 +29,7 @@ def get_conversations(
 def get_conversation(
     conversation_id: str,
     db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -35,7 +37,7 @@ def get_conversation(
     """
     conversation = db.query(AIConversation).filter(
         AIConversation.id == conversation_id,
-        AIConversation.workspace_id == current_user.workspace_id
+        AIConversation.workspace_id == workspace.id
     ).first()
     
     if not conversation:
@@ -47,6 +49,7 @@ def get_conversation(
 def create_conversation(
     conv_in: AIConversationCreate,
     db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -57,7 +60,7 @@ def create_conversation(
         messages.append(conv_in.message.dict())
         
     conversation = AIConversation(
-        workspace_id=current_user.workspace_id,
+        workspace_id=workspace.id,
         title=conv_in.title,
         identity_id=conv_in.identity_id,
         messages=messages
@@ -72,6 +75,7 @@ def update_conversation(
     conversation_id: str,
     conv_in: AIConversationUpdate,
     db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -79,7 +83,7 @@ def update_conversation(
     """
     conversation = db.query(AIConversation).filter(
         AIConversation.id == conversation_id,
-        AIConversation.workspace_id == current_user.workspace_id
+        AIConversation.workspace_id == workspace.id
     ).first()
     
     if not conversation:

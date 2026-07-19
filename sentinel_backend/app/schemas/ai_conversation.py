@@ -20,9 +20,11 @@ class AIConversationUpdate(BaseModel):
     title: Optional[str] = None
     message: Optional[Message] = None
 
+import uuid
+
 class AIConversationResponse(AIConversationBase):
-    id: str
-    workspace_id: str
+    id: uuid.UUID
+    workspace_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
