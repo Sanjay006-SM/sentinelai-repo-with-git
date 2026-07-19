@@ -123,6 +123,7 @@ _ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
     "https://sentinel14.netlify.app",
+    "https://sentinelai-repo-with-git-gld6-five.vercel.app",
 ]
 
 # Support an optional extra origin from environment (e.g. staging deployments)
