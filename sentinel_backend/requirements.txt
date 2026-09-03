@@ -19,6 +19,7 @@ requests
 pytest
 pytest-asyncio
 testcontainers[postgres]
-redis>=5.0.0
 slowapi
-langgraph
+langgraph==1.2.9
+redis>=5.0.0
+

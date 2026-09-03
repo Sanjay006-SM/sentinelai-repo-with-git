@@ -1,4 +1,4 @@
-export type ConnectorType = 'aws' | 'azure' | 'okta' | 'crowdstrike' | 'wazuh' | 'suricata' | 'openvas';
+﻿export type ConnectorType = 'aws' | 'azure' | 'okta' | 'crowdstrike' | 'wazuh' | 'suricata' | 'openvas';
 export type ConnectorStatus = 'available' | 'coming_soon' | 'configured' | 'syncing' | 'success' | 'synced_no_new_events' | 'error';
 export type EventSeverity = 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type EventStatus = 'SUCCESS' | 'FAILED' | 'PENDING' | 'BLOCKED';
@@ -124,3 +124,5 @@ export interface LiveEvent {
   status: EventStatus;
   message: string;
 }
+export type IngestionEvent = any;
+export type IngestionMetrics = any;

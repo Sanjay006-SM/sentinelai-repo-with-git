@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { server } from './mocks/server';
 import { cleanup } from '@testing-library/react';
+import { beforeAll, afterEach, afterAll } from 'vitest';
 
 // Establish API mocking before all tests.
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));

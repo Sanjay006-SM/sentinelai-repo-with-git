@@ -1,24 +1,42 @@
 """
-Multi-Source Incident Correlation Service (Stage 3)
+Multi-Source Incident Correlation Service (Dynamic SOC Engine)
 
-Correlates events from different security tools (AWS, Wazuh, Suricata, OpenVAS)
-into unified Incidents using time-window, actor, and asset overlap analysis.
+Correlates events from different security tools into unified Incidents 
+using dynamic, configuration-driven time-window and grouping key analysis.
 """
 
+import json
 import logging
-from datetime import datetime, timedelta, timezone
+import os
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from sqlalchemy.orm import Session as DBSession
-
 logger = logging.getLogger(__name__)
 
+# Load Dynamic SOC Configuration
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "core", "soc_config.json")
+
+def load_config() -> dict:
+    try:
+        with open(CONFIG_PATH, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"Failed to load dynamic correlation config: {e}")
+        # Safe fallback
+        return {
+            "correlation": {
+                "time_window_minutes": 5,
+                "grouping_keys": ["actor", "asset", "source_ip"],
+                "min_events_for_incident": 2,
+                "severity_mapping": {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "INFO": 0}
+            }
+        }
 
 class CorrelatedIncident:
-    """Represents a correlated security incident composed of events from multiple sources."""
+    """Represents a dynamically correlated security incident."""
 
-    def __init__(self, incident_id: Optional[str] = None):
+    def __init__(self, config: dict, incident_id: Optional[str] = None):
         self.id: str = incident_id or str(uuid4())
         self.events: List[Dict[str, Any]] = []
         self.sources: set = set()
@@ -29,6 +47,7 @@ class CorrelatedIncident:
         self.start_time: Optional[datetime] = None
         self.end_time: Optional[datetime] = None
         self.description: str = ""
+        self.config = config.get("correlation", {})
 
     def add_event(self, event: Dict[str, Any]):
         self.events.append(event)
@@ -56,16 +75,17 @@ class CorrelatedIncident:
             if self.end_time is None or event_time > self.end_time:
                 self.end_time = event_time
 
-        # Escalate severity
-        event_severity = event.get("severity", "INFO")
+        # Escalate severity using dynamic mapping
+        event_severity = str(event.get("severity", "INFO")).upper()
         self.severity = self._max_severity(self.severity, event_severity)
 
     def _max_severity(self, current: str, incoming: str) -> str:
-        order = {"INFO": 0, "LOW": 1, "Low": 1, "MEDIUM": 2, "Medium": 2,
-                 "HIGH": 3, "High": 3, "CRITICAL": 4, "Critical": 4}
-        if order.get(incoming, 0) > order.get(current, 0):
-            return incoming
-        return current
+        order = self.config.get("severity_mapping", {})
+        current_val = order.get(current.upper(), 0)
+        incoming_val = order.get(incoming.upper(), 0)
+        if incoming_val > current_val:
+            return incoming.capitalize()
+        return current.capitalize()
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -79,35 +99,30 @@ class CorrelatedIncident:
             "start_time": self.start_time.isoformat() if self.start_time else None,
             "end_time": self.end_time.isoformat() if self.end_time else None,
             "description": self.description,
-            "events": self.events[:50],  # Cap event payload
+            "events": self.events[:50],  # Cap payload
         }
 
 
 class IncidentCorrelator:
     """
-    Correlates security events from multiple sources into unified incidents.
-
-    Correlation rules:
-    1. Time proximity: events within a configurable window (default 5 minutes)
-    2. Actor overlap: events involving the same identity/user/IP
-    3. Asset overlap: events targeting the same resource/host
-    4. Kill-chain progression: events following MITRE ATT&CK tactic order
+    Correlates security events from multiple sources into unified incidents
+    using dynamic logic loaded from soc_config.json.
     """
 
-    def __init__(self, time_window_minutes: int = 5):
-        self.time_window = timedelta(minutes=time_window_minutes)
+    def __init__(self):
+        self.config = load_config()
+        self.corr_config = self.config.get("correlation", {})
+        self.time_window = timedelta(minutes=self.corr_config.get("time_window_minutes", 5))
+        self.grouping_keys = self.corr_config.get("grouping_keys", [])
 
     def correlate(self, events: List[Dict[str, Any]]) -> List[CorrelatedIncident]:
         """
-        Takes a list of normalized events from any source and groups them into
-        correlated incidents.
+        Takes a list of normalized events and groups them using dynamic rules.
         """
         if not events:
             return []
 
-        # Sort events by timestamp
         sorted_events = sorted(events, key=lambda e: e.get("timestamp", ""))
-
         incidents: List[CorrelatedIncident] = []
         assigned: set = set()
 
@@ -115,11 +130,10 @@ class IncidentCorrelator:
             if i in assigned:
                 continue
 
-            incident = CorrelatedIncident()
+            incident = CorrelatedIncident(self.config)
             incident.add_event(event)
             assigned.add(i)
 
-            # Find correlated events
             for j, candidate in enumerate(sorted_events):
                 if j in assigned or j == i:
                     continue
@@ -128,32 +142,31 @@ class IncidentCorrelator:
                     incident.add_event(candidate)
                     assigned.add(j)
 
-            # Generate description
             incident.description = self._generate_description(incident)
             incidents.append(incident)
 
-        # Filter out single-event incidents (not true multi-source correlations)
-        # Keep all incidents with 2+ events OR from multiple sources
-        significant_incidents = [
-            inc for inc in incidents
-            if len(inc.events) >= 2 or len(inc.sources) > 1
-        ]
+        # Dynamic filtering threshold
+        min_events = self.corr_config.get("min_events_for_incident", 2)
+        multi_source = self.corr_config.get("multi_source_escalation", True)
 
-        # Sort by severity and event count
-        severity_order = {"CRITICAL": 4, "Critical": 4, "HIGH": 3, "High": 3,
-                          "MEDIUM": 2, "Medium": 2, "LOW": 1, "Low": 1, "INFO": 0}
+        significant_incidents = []
+        for inc in incidents:
+            if len(inc.events) >= min_events or (multi_source and len(inc.sources) > 1):
+                significant_incidents.append(inc)
+
+        # Sort dynamically by severity
+        order = self.corr_config.get("severity_mapping", {})
         significant_incidents.sort(
-            key=lambda i: (severity_order.get(i.severity, 0), len(i.events)),
+            key=lambda i: (order.get(i.severity.upper(), 0), len(i.events)),
             reverse=True
         )
 
         return significant_incidents
 
-    def _should_correlate(self, event_a: Dict, event_b: Dict,
-                          incident: CorrelatedIncident) -> bool:
-        """Determines if two events should be correlated into the same incident."""
-
-        # Rule 1: Time proximity
+    def _should_correlate(self, event_a: Dict, event_b: Dict, incident: CorrelatedIncident) -> bool:
+        """Dynamically evaluates if two events should be correlated."""
+        
+        # 1. Time proximity check
         time_a = event_a.get("timestamp", "")
         time_b = event_b.get("timestamp", "")
         if time_a and time_b:
@@ -165,41 +178,35 @@ class IncidentCorrelator:
             except (ValueError, TypeError):
                 pass
 
-        # Rule 2: Actor overlap
-        actor_a = event_a.get("identity") or event_a.get("actor")
-        actor_b = event_b.get("identity") or event_b.get("actor")
-        if actor_a and actor_b and actor_a == actor_b:
-            return True
-
-        # Also check against all actors already in the incident
-        if actor_b and actor_b in incident.actors:
-            return True
-
-        # Rule 3: Asset overlap
-        asset_a = event_a.get("asset")
-        asset_b = event_b.get("asset")
-        if asset_a and asset_b and asset_a == asset_b:
-            return True
-
-        if asset_b and asset_b in incident.assets:
-            return True
-
-        # Rule 4: IP address overlap (source IP matching)
-        ip_a = event_a.get("metadata", {}).get("source_ip") or event_a.get("source_ip")
-        ip_b = event_b.get("metadata", {}).get("source_ip") or event_b.get("source_ip")
-        if ip_a and ip_b and ip_a == ip_b:
-            return True
+        # 2. Dynamic Grouping Keys
+        for key in self.grouping_keys:
+            if key in ["actor", "identity"]:
+                val_a = event_a.get("identity") or event_a.get("actor")
+                val_b = event_b.get("identity") or event_b.get("actor")
+                if val_a and val_b and val_a == val_b:
+                    return True
+                if val_b and val_b in incident.actors:
+                    return True
+            elif key == "asset":
+                val_a = event_a.get("asset")
+                val_b = event_b.get("asset")
+                if val_a and val_b and val_a == val_b:
+                    return True
+                if val_b and val_b in incident.assets:
+                    return True
+            else:
+                # Arbitrary metadata keys (e.g. source_ip)
+                val_a = event_a.get("metadata", {}).get(key) or event_a.get(key)
+                val_b = event_b.get("metadata", {}).get(key) or event_b.get(key)
+                if val_a and val_b and val_a == val_b:
+                    return True
 
         return False
 
     def _generate_description(self, incident: CorrelatedIncident) -> str:
-        """Auto-generates a human-readable description for the incident."""
         parts = []
-
         if len(incident.sources) > 1:
-            parts.append(
-                f"Cross-source incident detected across {', '.join(incident.sources)}"
-            )
+            parts.append(f"Cross-source incident detected across {', '.join(incident.sources)}")
         else:
             source = list(incident.sources)[0] if incident.sources else "unknown"
             parts.append(f"Correlated incident from {source}")
@@ -207,12 +214,10 @@ class IncidentCorrelator:
         parts.append(f"involving {len(incident.events)} events")
 
         if incident.actors:
-            actors_preview = list(incident.actors)[:3]
-            parts.append(f"by {', '.join(actors_preview)}")
+            parts.append(f"by {', '.join(list(incident.actors)[:3])}")
 
         if incident.assets:
-            assets_preview = list(incident.assets)[:3]
-            parts.append(f"targeting {', '.join(assets_preview)}")
+            parts.append(f"targeting {', '.join(list(incident.assets)[:3])}")
 
         if incident.start_time and incident.end_time:
             duration = incident.end_time - incident.start_time

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Search, MessageSquare, Settings, ShieldCheck, ShieldAlert, Sparkles, GitBranch, RefreshCw, HelpCircle } from "lucide-react";
+import { Bell, Search, MessageSquare, Settings, ShieldCheck, ShieldAlert, Sparkles, GitBranch, RefreshCw, HelpCircle, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotifications } from "@/lib/queries";
 import { useGlobalStore } from "@/lib/store";
@@ -133,6 +133,18 @@ export default function TopNav() {
             <span className="text-[9px] font-medium text-slate-400 capitalize">{userRole || 'viewer'}</span>
           </div>
         </div>
+        
+        {/* Sign Out Button */}
+        <button
+          onClick={() => {
+            localStorage.removeItem('auth-storage');
+            window.location.href = '/login';
+          }}
+          title="Sign Out"
+          className="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-600 transition-colors shadow-sm ml-2"
+        >
+          <LogOut className="w-4.5 h-4.5" />
+        </button>
       </div>
     </header>
   );
