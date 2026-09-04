@@ -44,8 +44,10 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        user_id = decode_and_verify_token(token)
-    except JWTError:
+        user_id_str = decode_and_verify_token(token)
+        import uuid
+        user_id = uuid.UUID(user_id_str)
+    except (JWTError, ValueError):
         raise credentials_exception
         
     user = db.query(User).filter(User.id == user_id).first()

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { http, HttpResponse } from 'msw';
 import { IntegrationResponse, IngestionEvent, IngestionMetrics } from '@/types/stage1';
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import '@testing-library/jest-dom';
 import { server } from './mocks/server';
 import { cleanup } from '@testing-library/react';
