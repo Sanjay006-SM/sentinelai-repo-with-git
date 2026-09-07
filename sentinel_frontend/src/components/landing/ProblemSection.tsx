@@ -1,74 +1,78 @@
 "use client";
 
-import { ShieldAlert, EyeOff, FileSpreadsheet, Sparkles } from "lucide-react";
-
 export default function ProblemSection() {
   const problems = [
     {
-      icon: <ShieldAlert className="w-6 h-6 text-indigo-600" />,
+      image: "/images/cards/sprawl_clean.png",
       title: "Machine Identity Sprawl",
-      desc: "Organizations have thousands of compute instances, serverless tasks, and service keys. Over-privileged machine roles outnumber human users 10-to-1."
+      desc1: "Organizations have thousands of compute instances, serverless tasks, and service keys.",
+      desc2: "Over-privileged machine roles outnumber human users 10-to-1."
     },
     {
-      icon: <FileSpreadsheet className="w-6 h-6 text-indigo-600" />,
+      image: "/images/cards/fatigue_clean.png",
       title: "Alert Fatigue",
-      desc: "CloudTrail logs generate millions of API events daily. Sifting through noise manually to isolate suspicious IAM actions is a mathematical impossibility."
+      desc1: "CloudTrail logs generate millions of API events daily.",
+      desc2: "Sifting through noise manually to isolate suspicious IAM actions is a mathematical impossibility."
     },
     {
-      icon: <EyeOff className="w-6 h-6 text-indigo-600" />,
+      image: "/images/cards/attack_paths_clean.png",
       title: "Invisible Attack Paths",
-      desc: "Attackers don't exploit a single critical CVE; they chain minor IAM assume-role policies to quietly access keys and data stores. These paths remain hidden."
+      desc1: "Attackers don't exploit a single critical CVE; they chain minor IAM assume-role policies to quietly access keys and data stores.",
+      desc2: "These paths remain hidden."
     }
   ];
 
   return (
-    <section id="company" className="w-full py-24 bg-white border-y border-slate-200 z-10 relative">
-      <div className="max-w-[1100px] mx-auto px-6">
+    <section id="company" className="w-full py-20 md:py-28 bg-white border-y border-slate-200 z-10 relative">
+      <div className="max-w-[1380px] mx-auto px-4 sm:px-6 md:px-8">
         {/* Section Heading */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-indigo-700 text-[13px] font-semibold tracking-[0.04em] bg-indigo-50 border border-indigo-100 mb-4">
+          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-pink-700 text-xs font-semibold tracking-wider bg-pink-50 border border-pink-200/60 mb-4 uppercase">
             THE IDENTITY CRISIS
           </div>
-          <h2 className="font-[family-name:var(--font-jakarta)] font-extrabold text-3xl md:text-5xl text-slate-900 mb-4">
+          <h2 className="font-[family-name:var(--font-jakarta)] font-extrabold text-3xl md:text-5xl text-[#1E0E34] mb-4 tracking-tight">
             Why Traditional Monitoring Fails Cloud Identities
           </h2>
-          <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+          <p className="text-slate-600 text-base md:text-lg max-w-2xl mx-auto">
             Traditional security tools flag individual compliance checks. SentinelAI discovers how they chain together to create real threats.
           </p>
         </div>
 
         {/* Problem grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 xl:gap-10">
           {problems.map((prob, i) => (
-            <div key={i} className="bg-slate-50 border border-slate-200 rounded-[20px] p-6 shadow-sm flex flex-col gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                {prob.icon}
+            <div 
+              key={i} 
+              className="group bg-[#FFFBF7] border border-[#F4E6ED] rounded-[28px] p-6 xl:p-7 shadow-sm hover:shadow-xl hover:border-pink-200/80 transition-all duration-300 flex flex-col justify-between h-full"
+            >
+              {/* Image Container - Perfect Aspect Ratio & Alignment */}
+              <div className="w-full aspect-[16/10] bg-gradient-to-b from-[#FFF5EC] to-[#FFF8F3] border border-[#F5E8DE] rounded-2xl mb-6 p-4 flex items-center justify-center overflow-hidden relative group-hover:bg-[#FFF2E8] transition-colors duration-300">
+                <img 
+                  src={prob.image} 
+                  alt={prob.title} 
+                  className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-sm" 
+                />
               </div>
-              <h3 className="font-[family-name:var(--font-jakarta)] text-lg font-bold text-slate-900">
-                {prob.title}
-              </h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                {prob.desc}
-              </p>
+
+              {/* Content Area */}
+              <div className="flex flex-col flex-1 justify-between">
+                <div>
+                  <h3 className="font-[family-name:var(--font-jakarta)] text-xl xl:text-2xl font-bold text-[#1E0E34] mb-3 leading-snug">
+                    {prob.title}
+                  </h3>
+                  <p className="text-slate-600 text-sm leading-relaxed mb-4">
+                    {prob.desc1}
+                  </p>
+                </div>
+                <p className="text-slate-600 text-sm leading-relaxed pt-3 border-t border-pink-100/80 font-medium text-slate-700">
+                  {prob.desc2}
+                </p>
+              </div>
             </div>
           ))}
-        </div>
-
-        {/* Resolution Banner */}
-        <div className="mt-12 bg-indigo-50/50 border border-indigo-100 rounded-[24px] p-8 flex flex-col md:flex-row items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-100 shrink-0">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="text-lg font-bold text-slate-900 mb-1">
-              SentinelAI Resolution Engine
-            </h4>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              We ingest logs, map relationships using a Neo4j graph db, run them through our Risk Engine, and use generative AI to deliver single-click incident investigations. No sprawl, no manual triage.
-            </p>
-          </div>
         </div>
       </div>
     </section>
   );
 }
+

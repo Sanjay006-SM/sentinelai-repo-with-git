@@ -100,7 +100,7 @@ export const useNotifications = () => {
     queryKey: ['notifications'],
     queryFn: async (): Promise<any[]> => {
       const res = await api.get('/notifications');
-      return res;
+      return Array.isArray(res) ? res : [];
     },
     refetchInterval: 10000 // Poll every 10s
   });

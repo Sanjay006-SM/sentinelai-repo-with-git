@@ -57,7 +57,7 @@ class ApiClient {
         workspaces: [{ id: "123e4567-e89b-12d3-a456-426614174000", name: "Production Workspace" }]
       };
     }
-    if (endpoint.includes('/integrations')) return [];
+    if (endpoint.includes('/integrations') || endpoint.includes('/notifications') || endpoint.includes('/identities') || endpoint.includes('/recent-findings') || endpoint.includes('/recent-events') || endpoint.includes('/top-attack-paths') || endpoint.includes('/ai-conversations')) return [];
     if (endpoint.includes('/ingestion')) return { events_per_second: 12, total_events_today: 4800, active_sources: 2 };
     return { success: true };
   }

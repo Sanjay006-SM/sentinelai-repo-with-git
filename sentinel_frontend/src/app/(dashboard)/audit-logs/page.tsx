@@ -11,13 +11,15 @@ export default function AuditLogsPage() {
   
   const [searchTerm, setSearchTerm] = useState('');
 
-  const stats = statsData || { total_events: 0, failed_actions: 0, security_events: 0, administrative_actions: 0 };
-  const logs = logsData?.data || [];
+  const stats = (statsData && typeof statsData === 'object')
+    ? statsData 
+    : { total_events: 0, failed_actions: 0, security_events: 0, administrative_actions: 0 };
+  const logs = Array.isArray(logsData?.data) ? logsData.data : (Array.isArray(logsData) ? logsData : []);
 
   const filteredLogs = logs.filter((log: any) => 
-    log.action.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    log.actor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (log.action || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (log.actor || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (log.category || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -106,9 +108,9 @@ export default function AuditLogsPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                          {log.actor.substring(0,2).toUpperCase()}
+                          {(log.actor || 'N/A').substring(0,2).toUpperCase()}
                         </div>
-                        <span className="font-semibold text-slate-900">{log.actor}</span>
+                        <span className="font-semibold text-slate-900">{log.actor || 'Unknown'}</span>
                       </div>
                     </td>
                     <td className="p-4 text-xs font-semibold text-slate-600 font-mono">
@@ -143,6 +145,10 @@ export default function AuditLogsPage() {
 }
 
 function StatCard({ title, value, desc, isLoading }: any) {
+  const formattedValue = (value !== undefined && value !== null) 
+    ? (typeof value === 'number' ? value.toLocaleString() : String(value)) 
+    : '0';
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col gap-2 hover:border-slate-300 transition-all">
       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{title}</span>
@@ -150,7 +156,7 @@ function StatCard({ title, value, desc, isLoading }: any) {
         {isLoading ? (
           <div className="h-8 w-16 bg-slate-100 rounded animate-pulse"></div>
         ) : (
-          <div className="text-2xl font-[family-name:var(--font-jakarta)] font-bold text-slate-900">{value.toLocaleString()}</div>
+          <div className="text-2xl font-[family-name:var(--font-jakarta)] font-bold text-slate-900">{formattedValue}</div>
         )}
       </div>
       <span className="text-xs text-slate-500">{desc}</span>

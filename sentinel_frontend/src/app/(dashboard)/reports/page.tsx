@@ -182,6 +182,10 @@ export default function ReportsPage() {
 }
 
 function StatCard({ title, value, desc, isLoading }: any) {
+  const formattedValue = (value !== undefined && value !== null) 
+    ? (typeof value === 'number' ? value.toLocaleString() : String(value)) 
+    : '0';
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col gap-2 hover:border-slate-300 transition-all">
       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{title}</span>
@@ -189,7 +193,7 @@ function StatCard({ title, value, desc, isLoading }: any) {
         {isLoading ? (
           <div className="h-8 w-16 bg-slate-100 rounded animate-pulse"></div>
         ) : (
-          <div className="text-2xl font-[family-name:var(--font-jakarta)] font-bold text-slate-900">{value.toLocaleString()}</div>
+          <div className="text-2xl font-[family-name:var(--font-jakarta)] font-bold text-slate-900">{formattedValue}</div>
         )}
       </div>
       <span className="text-xs text-slate-500">{desc}</span>

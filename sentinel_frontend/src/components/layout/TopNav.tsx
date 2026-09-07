@@ -8,7 +8,8 @@ import { useGlobalStore } from "@/lib/store";
 
 export default function TopNav() {
   const [showNotifications, setShowNotifications] = useState(false);
-  const { data: notifications = [], isLoading } = useNotifications();
+  const { data: notificationsData = [], isLoading } = useNotifications();
+  const notifications = Array.isArray(notificationsData) ? notificationsData : [];
   const userFullName = useGlobalStore((state) => state.userFullName);
   const userRole = useGlobalStore((state) => state.userRole);
   const initials = userFullName
